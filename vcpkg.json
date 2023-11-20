@@ -1,0 +1,11 @@
+{
+  "name": "hnoker",
+  "version": "0.0.1",
+  "dependencies": [
+    {
+      "name": "boost",
+      "version>=": "1.83.0"
+    }
+  ],
+  "builtin-baseline": "0c20b2a97c390e106150837042d921b0939e7ecb"
+}

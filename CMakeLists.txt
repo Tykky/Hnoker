@@ -6,13 +6,18 @@ project(Hnoker
 	LANGUAGES CXX
 )
 
-find_package(Boost 1.74.0 REQUIRED COMPONENTS system)
+if (DEFINED CACHE{USING_VCPKG})
+	execute_process(COMMAND vcpkg install)
+endif()
+
+find_package(Boost 1.83.0 REQUIRED COMPONENTS system)
 
 set(srcs
 	src/main.cpp
 )
 
 add_executable(hnoker ${srcs})
+target_include_directories(hnoker PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(hnoker PRIVATE ${Boost_LIBRARIES})
 
 set_property(TARGET hnoker PROPERTY CXX_STANDARD 20)
