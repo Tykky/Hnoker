@@ -7,7 +7,6 @@
 int main()
 {
     hnoker::network neta;
-    hnoker::network netb;
 
     std::vector<char> rbuf(1024);
     std::vector<char> wbuf(1024);
@@ -29,13 +28,8 @@ int main()
    const auto port = 55555;
 
     neta.async_create_server(port, rbuf_data, rbuf_data_size, wbuf_data, wbuf_data_size, read_write_op);
-    netb.async_connect_server("127.0.0.1", port, rbuf_data, rbuf_data_size, wbuf_data, wbuf_data_size, read_write_op);
+    neta.async_connect_server("127.0.0.1", port, rbuf_data, rbuf_data_size, wbuf_data, wbuf_data_size, read_write_op);
 
-    std::jthread th {};
-
-    auto id = th.get_id();
-
-    neta.join();
-    netb.join();
+    neta.run();
 
 }

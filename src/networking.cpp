@@ -48,36 +48,24 @@ namespace hnoker
         return new network_context;
     }
 
-    void deallocate_network_context(network_context* ctx)
+    void deallocate_network_context(network_context* network_context)
     {
-        delete ctx;
+        delete network_context;
+    }
+    
+    void run_impl(network_context* ctx)
+    {
+        ctx->boost_ctx.run();
     }
 
-    std::jthread async_create_server_impl(network_context* ctx, uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    void async_create_server_impl(network_context* ctx, uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
     {
-        return std::jthread([&, ctx, port]() {
-            co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
-            ctx->boost_ctx.run();
-        });
+        co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
     }
 
-    std::jthread async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
     {
-        return std::jthread([&, ctx, address, port]() {
-            co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
-            ctx->boost_ctx.run();
-        });
-    }
-
-    std::jthread async_connect_server_range_impl(network_context* ctx, std::vector<std::string>& addresses, uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
-    {
-        return std::jthread([&, ctx, port] {
-            for (auto address : addresses)
-            {
-                co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
-            }
-            ctx->boost_ctx.run();
-        });
+        co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
     }
 
     static awaitable<void> tcp_server_session(tcp::socket socket, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
@@ -174,4 +162,3 @@ namespace hnoker
         co_await tcp_client_session(std::move(socket), read_buf, read_buf_size, write_buf, write_buf_size, read_write_op);
     }
 }
-
