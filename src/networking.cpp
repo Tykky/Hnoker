@@ -29,10 +29,10 @@ namespace hnoker
     using boost::asio::use_awaitable;
     namespace this_coro = boost::asio::this_coro;
 
-    static awaitable<void> tcp_server_session(tcp::socket socket, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op);
-    static awaitable<void> tcp_client_session(tcp::socket socket, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op);
-    static awaitable<void> accept_tcp_connections(const uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op);
-    static awaitable<void> connect_to_tcp_server(const std::string_view host, const uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op);
+    static awaitable<void> tcp_server_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op);
+    static awaitable<void> tcp_client_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op);
+    static awaitable<void> accept_tcp_connections(const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op);
+    static awaitable<void> connect_to_tcp_server(const std::string_view host, const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op);
 
     struct network_context 
     {
@@ -58,17 +58,17 @@ namespace hnoker
         ctx->boost_ctx.run();
     }
 
-    void async_create_server_impl(network_context* ctx, uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,  const read_write_op_t& read_write_op)
     {
-        co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
+        co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, write_buf, read_write_op), detached);
     }
 
-    void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
-        co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
+        co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, write_buf, read_write_op), detached);
     }
 
-    static awaitable<void> tcp_server_session(tcp::socket socket, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    static awaitable<void> tcp_server_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         try
         {
@@ -78,11 +78,11 @@ namespace hnoker
             INFO("Starting tcp server session for client connecting from {}:{}", ip.to_string(), port);
             for (;;)
             {
-                std::size_t n = co_await socket.async_read_some(boost::asio::buffer(read_buf, read_buf_size), use_awaitable);
+                std::size_t n = co_await socket.async_read_some(boost::asio::buffer(read_buf), use_awaitable);
                 INFO("Server recieved {} bytes", n);
-                read_write_op(read_buf, read_buf_size, write_buf, write_buf_size);
-                co_await async_write(socket, boost::asio::buffer(write_buf, write_buf_size), use_awaitable);
-                INFO("Server responded with {} bytes", write_buf_size);
+                read_write_op(read_buf, write_buf);
+                co_await async_write(socket, boost::asio::buffer(write_buf), use_awaitable);
+                INFO("Server responded with {} bytes", write_buf.size());
             }
         }
         catch (boost::system::system_error& e)
@@ -93,20 +93,20 @@ namespace hnoker
                 INFO("Client disconnecting from {}", ip.to_string()); }
     }
 
-    static awaitable<void> tcp_client_session(tcp::socket socket, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    static awaitable<void> tcp_client_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         try
         {
             auto ip = socket.remote_endpoint().address();
             auto port = socket.remote_endpoint().port();
             INFO("Tcp client open to {}:{}", ip.to_string(), port);
-            read_write_op(read_buf, read_buf_size, write_buf, write_buf_size);
-            co_await async_write(socket, boost::asio::buffer(write_buf, write_buf_size), use_awaitable);
+            read_write_op(read_buf, write_buf);
+            co_await async_write(socket, boost::asio::buffer(write_buf), use_awaitable);
             for (;;)
             {
-                std::size_t n = co_await socket.async_read_some(boost::asio::buffer(read_buf, read_buf_size), use_awaitable);
-                read_write_op(read_buf, read_buf_size, write_buf, write_buf_size);
-                co_await async_write(socket, boost::asio::buffer(write_buf, write_buf_size), use_awaitable);
+                std::size_t n = co_await socket.async_read_some(boost::asio::buffer(read_buf), use_awaitable);
+                read_write_op(read_buf, write_buf);
+                co_await async_write(socket, boost::asio::buffer(write_buf), use_awaitable);
             }
         }
         catch (boost::system::system_error& e)
@@ -118,7 +118,7 @@ namespace hnoker
         }
     }
 
-    static awaitable<void> accept_tcp_connections(const uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    static awaitable<void> accept_tcp_connections(const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         auto executor = co_await this_coro::executor;
         tcp::acceptor acceptor(executor, {tcp::v4(), port});
@@ -132,11 +132,11 @@ namespace hnoker
             socket.set_option(option);
 
             INFO("Client connecting from {}", ip.to_string(), port);
-            co_spawn(executor, tcp_server_session(std::move(socket), read_buf, read_buf_size, write_buf, write_buf_size, read_write_op), detached);
+            co_spawn(executor, tcp_server_session(std::move(socket), read_buf, write_buf, read_write_op), detached);
         }
     }
 
-    static awaitable<void> connect_to_tcp_server(const std::string_view host, const uint16_t port, char*& read_buf, std::size_t& read_buf_size, char*& write_buf, std::size_t& write_buf_size, const read_write_op_t& read_write_op)
+    static awaitable<void> connect_to_tcp_server(const std::string_view host, const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         auto executor = co_await this_coro::executor;
         tcp::socket socket(executor);
@@ -159,6 +159,6 @@ namespace hnoker
         co_await socket.async_connect(endpoint, use_awaitable);
         timer.cancel();
 
-        co_await tcp_client_session(std::move(socket), read_buf, read_buf_size, write_buf, write_buf_size, read_write_op);
+        co_await tcp_client_session(std::move(socket), read_buf, write_buf, read_write_op);
     }
 }
