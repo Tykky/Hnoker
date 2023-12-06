@@ -18,7 +18,10 @@ set(srcs
 	src/networking.hpp
     src/networking.cpp
 	src/logging.hpp
-    src/logging.cpp)
+    src/logging.cpp
+	src/player.hpp
+	src/player.cpp
+)
 
 add_executable(hnoker ${srcs})
 target_include_directories(hnoker PRIVATE ${Boost_INCLUDE_DIRS})

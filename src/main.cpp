@@ -1,10 +1,14 @@
-#include "networking.hpp"
 #include "logging.hpp"
+#include "networking.hpp"
+#include "player.hpp"
+
+#include <chrono>
 #include <vector>
 #include <functional>
 #include <string>
+#include <thread>
 
-int main()
+void test_networking()
 {
     hnoker::network neta;
 
@@ -30,5 +34,33 @@ int main()
     neta.async_connect_server("127.0.0.1", port, rbuf, wbuf, read_write_op);
 
     neta.run();
+}
 
+void test_player()
+{
+    player::MusicPlayer player(2);
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    player.toggle_pause();
+    //std::cout << "\nPaused\n";
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    player.toggle_pause();
+    //std::cout << "Unpaused\n\n\n";
+
+    std::this_thread::sleep_for(std::chrono::seconds(20));
+    player.add_to_queue(1);
+    //std::cout << "\nAdded new song to queue\n\n\n";
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    player.set_elapsed(3);
+    //std::cout << "\nSet timer to 3 seconds\n\n\n";
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    player.stopper.request_stop();
+}
+
+int main()
+{
+    
 }
