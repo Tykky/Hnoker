@@ -6,6 +6,7 @@
 #include <chrono>
 #include <fstream>
 #include <functional>
+#include <span>
 #include <string>
 #include <thread>
 #include <vector>
@@ -45,6 +46,40 @@ void test_networking()
         INFO("read data: {}", rbuf.data());
         std::string muted = "ok muted XD " + std::to_string(++i);
         memcpy(wbuf.data(), muted.data(), muted.size());
+    };
+
+   const auto port = 55555;
+
+    neta.async_create_server(port, rbuf, wbuf, read_write_op);
+    neta.async_connect_server("127.0.0.1", port, rbuf, wbuf, read_write_op);
+
+    neta.run();
+}
+
+void test_networking_archives()
+{
+    hnoker::network neta;
+
+    std::vector<char> rbuf(1024);
+    std::vector<char> wbuf(1024);
+
+    char* rbuf_data = rbuf.data();
+    char* wbuf_data = wbuf.data();
+
+    std::size_t rbuf_data_size = rbuf.size();
+    std::size_t wbuf_data_size = wbuf.size();
+
+    std::function read_write_op = [i = 0](std::span<char> rbuf, std::span<char> wbuf) mutable
+    {
+        INFO("Attempting deserialization...");
+        if (rbuf[0] != 0) {
+            ChangeSong cs_in = hnoker::read_archive_from_buffer<ChangeSong>(rbuf);
+            INFO("song_id: {}", cs_in.song_id);
+        } else {
+            INFO("First byte was null, skipping deserialization because this probably was the first piece of data");
+        }
+        ChangeSong cs_out {.song_id = ++i};
+        hnoker::write_archive_to_buffer<ChangeSong>(wbuf, cs_out);
     };
 
    const auto port = 55555;

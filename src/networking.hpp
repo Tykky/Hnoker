@@ -1,10 +1,11 @@
 #pragma once
 
-#include <memory>
-#include <string_view>
-#include <functional>
 #include "logging.hpp"
+#include <functional>
+#include <memory>
 #include <span>
+#include <string_view>
+#include <strstream>
 
 namespace hnoker 
 {
@@ -18,6 +19,24 @@ namespace hnoker
 
     void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,  const read_write_op_t& read_write_op);
     void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,const read_write_op_t& read_write_op);
+
+    template<class Serializable>
+    void write_archive_to_buffer(std::span<char>& buffer, const Serializable& s)
+    {
+        std::ostrstream output_stream(buffer.data(), (int) buffer.size());
+        boost::archive::text_oarchive oa{output_stream};
+        oa << s;
+    }
+
+    template<class Serializable>
+    Serializable read_archive_from_buffer(const std::span<char>& buffer)
+    {
+        std::istrstream input_stream(buffer.data(), (int) buffer.size());
+        boost::archive::text_iarchive ia{input_stream};
+        Serializable s;
+        ia >> s;
+        return s;
+    }
 
     struct network
     {

@@ -1,5 +1,9 @@
-#include "networking.hpp"
 #include "logging.hpp"
+#include "message_types.hpp"
+#include "networking.hpp"
+
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/experimental/awaitable_operators.hpp>
 #include <boost/asio/co_spawn.hpp>
@@ -8,10 +12,11 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/write.hpp>
+
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <memory>
-#include <functional>
 
 namespace hnoker 
 {
