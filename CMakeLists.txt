@@ -10,11 +10,12 @@ if (DEFINED CACHE{USING_VCPKG})
 	execute_process(COMMAND vcpkg install)
 endif()
 
-find_package(Boost 1.83.0 REQUIRED COMPONENTS system)
+find_package(Boost 1.83.0 REQUIRED COMPONENTS system serialization)
 find_package(spdlog 1.12.0 REQUIRED)
 
 set(srcs
 	src/main.cpp
+	src/message_types.hpp
 	src/networking.hpp
     src/networking.cpp
 	src/logging.hpp

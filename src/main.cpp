@@ -1,12 +1,33 @@
 #include "logging.hpp"
+#include "message_types.hpp"
 #include "networking.hpp"
 #include "player.hpp"
 
 #include <chrono>
-#include <vector>
+#include <fstream>
 #include <functional>
 #include <string>
 #include <thread>
+#include <vector>
+
+void test_archival()
+{
+    {
+        std::ofstream test_output("test_filename420.virus");
+        const ControlMusic cm{.op = ControlOperation::SKIP};
+        boost::archive::text_oarchive oa(test_output);
+        oa << cm;
+    }
+    {
+        std::ifstream test_input("test_filename420.virus");
+        boost::archive::text_iarchive ia(test_input);
+        ControlMusic read_cm;
+        ia >> read_cm;
+        std::cout << "type: " << read_cm.type[0] << read_cm.type[1] << "\n"
+                  << "size: " << read_cm.size << "\n"
+                  << "op: " << read_cm.op << "\n";
+    }
+}
 
 void test_networking()
 {
@@ -62,5 +83,5 @@ void test_player()
 
 int main()
 {
-    
+
 }
