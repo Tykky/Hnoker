@@ -23,9 +23,7 @@ void test_archival()
         boost::archive::text_iarchive ia(test_input);
         ControlMusic read_cm;
         ia >> read_cm;
-        std::cout << "type: " << read_cm.type[0] << read_cm.type[1] << "\n"
-                  << "size: " << read_cm.size << "\n"
-                  << "op: " << read_cm.op << "\n";
+        std::cout << "op: " << read_cm.op << "\n";
     }
 }
 

@@ -1,5 +1,6 @@
 #include "player.hpp"
 
+
 namespace player {
     using namespace std::literals::chrono_literals;
     using std::chrono::time_point;
@@ -95,7 +96,10 @@ namespace player {
     {
         {
             std::unique_lock<std::mutex> queue_lock(queue_mutex);
-            song_queue.emplace_back(song_id);
+            if (song_queue.size() < MAXIMUM_QUEUE_SIZE)
+            {
+                song_queue.emplace_back(song_id);
+            }
         }
         queue_wait.notify_all();
     }
@@ -109,5 +113,25 @@ namespace player {
     {
         paused = !paused;
         pause_wait.notify_all();
+    }
+
+    const SendStatus MusicPlayer::get_status() {
+        std::array<int, MAXIMUM_QUEUE_SIZE> queue_array{};
+        std::uint8_t size;
+
+        {
+            auto array_it = queue_array.begin();
+            std::lock_guard<std::mutex> queue_lock(queue_mutex);
+            size = song_queue.size();
+            std::copy(song_queue.cbegin(), song_queue.cend(), queue_array.begin());
+        }
+
+        return SendStatus {
+            song_id,
+            elapsed,
+            paused,
+            size,
+            queue_array,
+        };
     }
 }

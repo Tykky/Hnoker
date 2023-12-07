@@ -1,5 +1,8 @@
 #pragma once
 
+#include "message_types.hpp"
+
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -46,5 +49,6 @@ namespace player {
         void add_to_queue(int song_id);
         void set_elapsed(int new_elapsed);
         void toggle_pause();
+        const SendStatus get_status();
     };
 }
