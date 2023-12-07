@@ -122,7 +122,7 @@ namespace player {
         {
             auto array_it = queue_array.begin();
             std::lock_guard<std::mutex> queue_lock(queue_mutex);
-            size = song_queue.size();
+            size = (std::uint8_t) song_queue.size();
             std::copy(song_queue.cbegin(), song_queue.cend(), queue_array.begin());
         }
 
