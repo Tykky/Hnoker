@@ -1,5 +1,6 @@
 #pragma once
 
+#include "logging.hpp"
 #include "message_types.hpp"
 
 #include <array>
@@ -46,6 +47,7 @@ namespace player {
 
         MusicPlayer(int initial_song);
         void next_song();
+        void skip();
         void add_to_queue(int song_id);
         void set_elapsed(int new_elapsed);
         void toggle_pause();

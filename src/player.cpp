@@ -24,6 +24,7 @@ namespace player {
     }
 
     void MusicPlayer::wait_if_queue_empty() {
+        INFO("Ran out of music to play, waiting for new song")
         while (true)
         {
             {
@@ -34,6 +35,7 @@ namespace player {
                 }
             }
             std::this_thread::sleep_for(0.2s);
+            INFO("Still waiting...")
         }
     }
 
@@ -87,13 +89,33 @@ namespace player {
     void MusicPlayer::next_song()
     {
         wait_if_queue_empty();
-        std::unique_lock<std::mutex> queue_lock(queue_mutex);
+        INFO("New song detected, acquiring lock to play it")
+        std::lock_guard<std::mutex> queue_lock(queue_mutex);
         song_id = song_queue.front();
         song_queue.pop_front();
+        elapsed = -1;
+        INFO("Lock obtained and skipped to new song")
+    }
+
+    void MusicPlayer::skip()
+    {
+        INFO("Obtaining lock to skip")
+        std::lock_guard<std::mutex> queue_lock(queue_mutex);
+        INFO("Lock obtained, skipping song if queue isn't empty")
+        if (!song_queue.empty())
+        {
+            song_id = song_queue.front();
+            song_queue.pop_front();
+            elapsed = -1;
+            INFO("Skipped")
+            return;
+        }
+        INFO("Queue was empty, did not skip")
     }
 
     void MusicPlayer::add_to_queue(int song_id)
     {
+        INFO("Obtaining lock to add id {} to queue", song_id)
         {
             std::unique_lock<std::mutex> queue_lock(queue_mutex);
             if (song_queue.size() < MAXIMUM_QUEUE_SIZE)
@@ -101,12 +123,14 @@ namespace player {
                 song_queue.emplace_back(song_id);
             }
         }
-        queue_wait.notify_all();
+        INFO("Added {} to queue", song_id)
+        //queue_wait.notify_all();
     }
 
     void MusicPlayer::set_elapsed(int new_elapsed)
     {
         elapsed = new_elapsed;
+        INFO("Changed elapsed time to {}", new_elapsed);
     }
 
     void MusicPlayer::toggle_pause()
