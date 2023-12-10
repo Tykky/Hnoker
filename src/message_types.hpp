@@ -4,8 +4,20 @@
 #include <cstdint>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <span>
 
 #define MAXIMUM_QUEUE_SIZE 128
+
+enum struct MessageType : std::uint8_t {
+    CONTROL_MUSIC = 0,
+    CHANGE_SONG = 1,
+    DISCONNECT = 2,
+    CONNECT = 3,
+    QUERY_STATUS = 4,
+    SEND_STATUS = 5,
+    BULLY = 6,
+    CONNECTOR_LIST = 7
+};
 
 enum struct ControlOperation : std::uint8_t {
     START = 1,
