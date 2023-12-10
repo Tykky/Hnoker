@@ -127,6 +127,6 @@ struct Client {
 };
 
 struct ClientList {
+    std::uint8_t num_clients;
     Client clients[MAXIMUM_CLIENTS];
-    size_t xd = sizeof(std::array<Client, MAXIMUM_CLIENTS>);
 };
