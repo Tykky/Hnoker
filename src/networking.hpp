@@ -31,7 +31,7 @@ namespace hnoker
     {
         Message m {static_cast<MessageType>(buffer[0])};
         MessageType type = static_cast<MessageType>(buffer[0]);
-        std::istrstream input_stream(buffer.data(), (int) buffer.size());
+        std::istrstream input_stream(buffer.data() + 1, (int) buffer.size());
         boost::archive::text_iarchive ia{input_stream};
         ia >> m;
         return m;
