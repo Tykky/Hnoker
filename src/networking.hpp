@@ -11,7 +11,7 @@ namespace hnoker
 {
     struct network_context;
 
-    using read_write_op_t = std::function<bool(std::span<char> read_buf, std::span<char> write_buf)>;
+    using read_write_op_t = std::function<bool(std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port)>;
 
     network_context* allocate_network_context();
     void deallocate_network_context(network_context* network_context);

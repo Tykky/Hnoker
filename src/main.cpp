@@ -108,7 +108,7 @@ void test_networking_archives_singlemessage()
     // Tässä testiversiossa serveri vaan vastaanottaa ja käyttää sitä arvoa playerin kontrolloimiseen,
     // ei kirjota mitään takas
 
-    std::function write_archive = [](std::span<char> rbuf, std::span<char> wbuf) mutable -> bool 
+    std::function write_archive = [](std::span<char> rbuf, std::span<char> wbuf, const std::string& ip, std::uint16_t port) mutable -> bool 
     {
         INFO("Writing one-byte header and ChangeSong struct to wbuf");
         ChangeSong cs_out {.song_id = 1};
@@ -118,7 +118,7 @@ void test_networking_archives_singlemessage()
         return true;
     };
 
-    std::function read_write_op = [&player](std::span<char> rbuf, std::span<char> wbuf) -> bool
+    std::function read_write_op = [&player](std::span<char> rbuf, std::span<char> wbuf, const std::string& ip, std::uint16_t port) -> bool
     {
         INFO("Header not used yet but its value is: {}", +rbuf[0]);
 
@@ -177,5 +177,5 @@ void test_player()
 
 int main()
 {
-
+    test_networking_archives_singlemessage();
 }
