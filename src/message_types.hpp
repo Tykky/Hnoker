@@ -7,6 +7,7 @@
 #include <span>
 
 #define MAXIMUM_QUEUE_SIZE 128
+#define MAXIMUM_CLIENTS 64
 
 enum struct MessageType : std::uint8_t {
     CONTROL_MUSIC = 0,
@@ -118,4 +119,14 @@ struct Bully {
     {
         ar & et;
     }
+};
+
+struct Client {
+    char ip[16];
+    std::uint16_t port;
+};
+
+struct ClientList {
+    Client clients[MAXIMUM_CLIENTS];
+    size_t xd = sizeof(std::array<Client, MAXIMUM_CLIENTS>);
 };
