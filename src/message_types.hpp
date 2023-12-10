@@ -5,6 +5,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <span>
+#include <variant>
 
 #define MAXIMUM_QUEUE_SIZE 128
 #define MAXIMUM_CLIENTS 64
@@ -129,4 +130,78 @@ struct Client {
 struct ClientList {
     std::uint8_t num_clients;
     Client clients[MAXIMUM_CLIENTS];
+};
+
+struct Message
+{
+    Message(MessageType t) : 
+        type(t)
+    {
+        switch (type)
+        {
+            case MessageType::CONTROL_MUSIC:
+                new (&cm) ControlMusic;
+                break;
+            case MessageType::CHANGE_SONG:
+                new (&cs) ChangeSong;
+                break;
+            case MessageType::DISCONNECT:
+                new (&dc) Disconnect;
+                break;
+            case MessageType::CONNECT:
+                new (&cn) Connect;
+                break;
+            case MessageType::QUERY_STATUS:
+                new (&qs) QueryStatus;
+                break;
+            case MessageType::SEND_STATUS:
+                new (&ss) SendStatus;
+                break;
+            case MessageType::BULLY:
+                new (&bl) Bully;
+                break;
+        }
+    }
+
+    const MessageType type;
+
+    union 
+    {
+        ControlMusic cm;
+        ChangeSong   cs;
+        Disconnect   dc;
+        Connect      cn;
+        QueryStatus  qs;
+        SendStatus   ss;
+        Bully        bl;
+    };
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        switch (type)
+        {
+            case MessageType::CONTROL_MUSIC:
+                cm.serialize(ar, version);
+                break;
+            case MessageType::CHANGE_SONG:
+                cs.serialize(ar, version);
+                break;
+            case MessageType::DISCONNECT:
+                dc.serialize(ar, version);
+                break;
+            case MessageType::CONNECT:
+                cn.serialize(ar, version);
+                break;
+            case MessageType::QUERY_STATUS:
+                qs.serialize(ar, version);
+                break;
+            case MessageType::SEND_STATUS:
+                // ss.serialize(ar, version);
+                break;
+            case MessageType::BULLY:
+                bl.serialize(ar, version);
+                break;
+        }
+    }
 };

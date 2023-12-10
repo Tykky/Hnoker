@@ -20,22 +20,21 @@ namespace hnoker
     void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,  const read_write_op_t& read_write_op);
     void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,const read_write_op_t& read_write_op);
 
-    template<class Serializable>
-    void write_archive_to_buffer(std::span<char>& buffer, const Serializable& s)
+    inline void write_message_to_buffer(std::span<char>& buffer, const Message& m)
     {
         std::ostrstream output_stream(buffer.data(), (int) buffer.size());
         boost::archive::text_oarchive oa{output_stream};
-        oa << s;
+        oa << m;
     }
 
-    template<class Serializable>
-    Serializable read_archive_from_buffer(const std::span<char>& buffer)
+    inline Message read_message_from_buffer(const std::span<char>& buffer)
     {
+        Message m {static_cast<MessageType>(buffer[0])};
+        MessageType type = static_cast<MessageType>(buffer[0]);
         std::istrstream input_stream(buffer.data(), (int) buffer.size());
         boost::archive::text_iarchive ia{input_stream};
-        Serializable s;
-        ia >> s;
-        return s;
+        ia >> m;
+        return m;
     }
 
     struct network
