@@ -84,7 +84,7 @@ namespace hnoker
                 INFO("Starting tcp server session for client connecting from {}:{}", ip.to_string(), port);
                 std::size_t n = co_await socket.async_read_some(boost::asio::buffer(read_buf), use_awaitable);
                 INFO("Server received {} bytes", n);
-                bool send_response = read_write_op(read_buf, write_buf);
+                bool send_response = read_write_op(read_buf, write_buf, ip.to_string(), (std::uint16_t) port);
                 if (send_response)
                 {
                     co_await async_write(socket, boost::asio::buffer(write_buf), use_awaitable);
@@ -108,7 +108,7 @@ namespace hnoker
             auto ip = socket.remote_endpoint().address();
             auto port = socket.remote_endpoint().port();
             INFO("Tcp client open to {}:{}", ip.to_string(), port);
-            read_write_op(read_buf, write_buf);
+            read_write_op(read_buf, write_buf, ip.to_string(), (std::uint16_t) port);
             co_await async_write(socket, boost::asio::buffer(write_buf), use_awaitable);
         }
         catch (boost::system::system_error& e)

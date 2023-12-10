@@ -129,7 +129,15 @@ struct Client {
 
 struct ClientList {
     std::uint8_t num_clients;
+    std::uint16_t bully_id;
     Client clients[MAXIMUM_CLIENTS];
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        ar & num_clients;
+        ar & clients;
+    }
 };
 
 struct Message
