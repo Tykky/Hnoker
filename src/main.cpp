@@ -33,9 +33,7 @@ void test_networking_archives_singlemessage()
         INFO("Writing one-byte header and ChangeSong struct to wbuf");
         Message cs_out { MessageType::CHANGE_SONG };
         cs_out.cs.song_id = 1;
-        wbuf[0] = static_cast<std::uint8_t>(MessageType::CHANGE_SONG);
-        std::span<char> after_header{wbuf.begin() + 1, wbuf.end()};
-        hnoker::write_message_to_buffer(after_header, cs_out);
+        hnoker::write_message_to_buffer(wbuf, cs_out);
         return true;
     };
 

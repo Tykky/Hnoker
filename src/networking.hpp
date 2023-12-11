@@ -22,7 +22,11 @@ namespace hnoker
 
     inline void write_message_to_buffer(std::span<char>& buffer, const Message& m)
     {
-        std::ostrstream output_stream(buffer.data(), (int) buffer.size());
+        buffer[0] = static_cast<std::uint8_t>(m.type);
+
+        std::span<char> archive_buffer{buffer.begin() + 1, buffer.end()};
+        std::ostrstream output_stream(archive_buffer.data(), (int) archive_buffer.size());
+
         boost::archive::text_oarchive oa{output_stream};
         oa << m;
     }
