@@ -125,6 +125,7 @@ struct Bully {
 struct Client {
     char ip[16];
     std::uint16_t port;
+    std::uint16_t bully_id;
 };
 
 struct ClientList {
