@@ -15,6 +15,8 @@ find_package(spdlog 1.12.0 REQUIRED)
 
 set(srcs
 	src/main.cpp
+	src/connector.hpp
+	src/connector.cpp
 	src/message_types.hpp
 	src/message_types.cpp
 	src/networking.hpp

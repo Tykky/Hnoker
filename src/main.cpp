@@ -1,3 +1,4 @@
+#include "connector.hpp"
 #include "logging.hpp"
 #include "message_types.hpp"
 #include "networking.hpp"
@@ -96,5 +97,5 @@ void test_player()
 
 int main()
 {
-    test_networking_archives_singlemessage();
+
 }

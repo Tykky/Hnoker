@@ -18,7 +18,8 @@ enum struct MessageType : std::uint8_t {
     QUERY_STATUS = 4,
     SEND_STATUS = 5,
     BULLY = 6,
-    CONNECTOR_LIST = 7
+    CONNECTOR_LIST = 7,
+    CONNECTOR_LIST_UPDATE = 8,
 };
 
 enum struct ControlOperation : std::uint8_t {
@@ -126,11 +127,32 @@ struct Client {
     char ip[16];
     std::uint16_t port;
     std::uint16_t bully_id;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        ar & ip;
+        ar & port;
+        ar & bully_id;
+    }
 };
 
 struct ClientList {
     std::uint8_t num_clients;
     std::uint16_t bully_id;
+    Client clients[MAXIMUM_CLIENTS];
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        ar & num_clients;
+        ar & bully_id;
+        ar & clients;
+    }
+};
+
+struct ClientListUpdate {
+    std::uint8_t num_clients;
     Client clients[MAXIMUM_CLIENTS];
 
     template<class Archive>
@@ -169,6 +191,12 @@ struct Message
             case MessageType::BULLY:
                 new (&bl) Bully;
                 break;
+            case MessageType::CONNECTOR_LIST:
+                new (&cl) ClientList;
+                break;
+            case MessageType::CONNECTOR_LIST_UPDATE:
+                new (&cu) ClientListUpdate;
+                break;
         }
     }
 
@@ -176,13 +204,15 @@ struct Message
 
     union 
     {
-        ControlMusic cm;
-        ChangeSong   cs;
-        Disconnect   dc;
-        Connect      cn;
-        QueryStatus  qs;
-        SendStatus   ss;
-        Bully        bl;
+        ControlMusic     cm;
+        ChangeSong       cs;
+        Disconnect       dc;
+        Connect          cn;
+        QueryStatus      qs;
+        SendStatus       ss;
+        Bully            bl;
+        ClientList       cl;
+        ClientListUpdate cu;
     };
 
     template<class Archive>
@@ -210,6 +240,12 @@ struct Message
                 break;
             case MessageType::BULLY:
                 bl.serialize(ar, version);
+                break;
+            case MessageType::CONNECTOR_LIST:
+                cl.serialize(ar, version);
+                break;
+            case MessageType::CONNECTOR_LIST_UPDATE:
+                cu.serialize(ar, version);
                 break;
         }
     }
