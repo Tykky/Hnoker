@@ -53,11 +53,18 @@ std::jthread create_knocker(const std::string ip, const std::uint16_t port)
 
             hnoker::write_message_to_buffer(read_span, qs_out);
 
+            INFO("Knocker created for {}:{}", ip, 55555);
+            hnoker::read_write_op_t knocker_callback = [](std::span<char> xd1, std::span<char> xd2, const std::string& ip, std::uint16_t port) -> bool
+            {
+                return true;
+            };
+
             while (true)
             {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 hnoker::network knocker_network;
-                knocker_network.async_connect_server(ip, port, read_span, write_span, hnoker::read_write_op_t{});
+                INFO("Knocking {}:{}", ip, 55555);
+                knocker_network.async_connect_server(ip, 55555, read_span, write_span, knocker_callback);
             }
         }
     };
@@ -65,6 +72,7 @@ std::jthread create_knocker(const std::string ip, const std::uint16_t port)
 
 void remove_client(Client to_remove, std::vector<ClientInfo>& clients)
 {
+    INFO("Removing {}:{}", to_remove.ip, to_remove.port);
     const auto client_equals = [&](const ClientInfo& client) -> bool
     {
         return (std::strncmp(client.client.ip, to_remove.ip, 16) == 0) 
@@ -88,19 +96,27 @@ void refresh_timeout(Client to_refresh, std::vector<ClientInfo>& clients)
 
 void send_list_to_all(const std::vector<ClientInfo>& clients)
 {
+    INFO("Starting list send")
     std::array<char, 1024> write_buffer;
-    std::span<char> write_span{write_buffer};
+    std::span<char> write_span{write_buffer.begin(), write_buffer.end()};
 
     Message clientlist{ MessageType::CONNECTOR_LIST_UPDATE };
+    INFO("Current clients: {}", clients.size());
     clientlist.cu.num_clients = clients.size();
     auto i = 0;
 
     for (const ClientInfo& c : clients)
     {
-        clientlist.cl.clients[i++] = c.client;
+        clientlist.cu.clients[i++] = c.client;
     }
 
+    INFO("Wrote {} clients to struct", i);
+    if (clientlist.type != MessageType::CONNECTOR_LIST_UPDATE)
+    {
+        WARN("Struct was wrong type!");
+    }
     hnoker::write_message_to_buffer(write_span, clientlist);
+    INFO("Client list written to buffer");
     hnoker::read_write_op_t op = [](std::span<char> xd, std::span<char> xd2, const std::string& xd3, std::uint16_t xd4)
     {
         return true;
@@ -110,9 +126,11 @@ void send_list_to_all(const std::vector<ClientInfo>& clients)
 
     for (const ClientInfo& c : clients)
     {
-        bombardment.async_connect_server(c.client.ip, 55555, std::span<char>(), write_buffer, op);
+        INFO("Client: {}", c.client.ip)
+        std::jthread xd {[&](){bombardment.async_connect_server(c.client.ip, 55555, std::span<char>(), write_buffer, op); bombardment.run(); }};
+        xd.detach();
+        INFO("Detached thread")
     }
-    bombardment.run();
 }
 
 void start_connector()
@@ -125,7 +143,7 @@ void start_connector()
 
     RNG rng{};
 
-    std::function handle_message = [&clients, &rng](std::span<char> read_buffer, std::span<char> write_buffer, const std::string& ip, const std::uint16_t& port) -> bool
+    hnoker::read_write_op_t handle_message = [&clients, &rng](std::span<char> read_buffer, std::span<char> write_buffer, const std::string& ip, const std::uint16_t& port) -> bool
     {
         INFO("Connector received message from {}:{}", ip, port)
         MessageType message_type = static_cast<MessageType>(read_buffer[0]);
@@ -155,13 +173,14 @@ void start_connector()
     };
 
     hnoker::network network;
-    std::jthread xd([&]() { network.async_create_server(1738, read_buffer, write_buffer, handle_message); network.run(); });
-
+    std::jthread xd{[&]() { network.async_create_server(12345, read_buffer, write_buffer, handle_message); INFO("Connector receiving messages"); network.run(); }};
+    xd.detach();
 
 
     while (true)
-    {    
+    {
         std::this_thread::sleep_for(std::chrono::seconds(2));
+        INFO("Cleaning up timed out clients")
         auto now = clocker.now();
         const auto past_timeout = [&](const ClientInfo& c)
         {

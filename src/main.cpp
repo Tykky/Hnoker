@@ -71,6 +71,51 @@ void test_networking_archives_singlemessage()
     }
 }
 
+void test_connector()
+{
+    std::jthread xd([]() { start_connector(); });
+    xd.detach();
+
+    std::array<char, 1024> client_rbuf;
+    std::array<char, 1024> client_wbuf;
+
+    hnoker::read_write_op_t client_callback = [](std::span<char> rbuf, std::span<char> wbuf, const std::string& ip, std::uint16_t port) -> bool
+    {
+        INFO("Sending message in 3")
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        Message connect{ MessageType::CONNECT };
+        hnoker::write_message_to_buffer(wbuf, connect);
+        INFO("Sending message")
+        return true;
+    };
+
+    hnoker::read_write_op_t server_callback = [](std::span<char> rbuf, std::span<char> wbuf, const std::string& ip, std::uint16_t port) -> bool
+    {
+        INFO("Trying to read message from buffer")
+        Message message = hnoker::read_message_from_buffer(rbuf);
+        INFO("Number of clients: {}", message.cu.num_clients);
+        INFO("First client ip: {}", message.cu.clients[0].ip);
+        INFO("First client bully id: {}", message.cu.clients[0].bully_id);
+        INFO("First client port: {}", message.cu.clients[0].port);
+        return false;
+    };
+
+    hnoker::network server_network;
+
+    std::jthread xd2blyat([&]() { server_network.async_create_server(55555, client_rbuf, client_wbuf, server_callback); server_network.run(); });
+    xd2blyat.detach();
+
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        INFO("Sending message");
+        hnoker::network client_network;
+        client_network.async_connect_server("127.0.0.1", 12345, client_rbuf, client_wbuf, client_callback);
+        client_network.run();
+        INFO("Message sent")
+    }
+}
+
 void test_player()
 {
     player::MusicPlayer player(2);
@@ -97,5 +142,5 @@ void test_player()
 
 int main()
 {
-
+    test_connector();
 }

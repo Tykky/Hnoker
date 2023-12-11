@@ -72,7 +72,28 @@ namespace hnoker
         co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, write_buf, read_write_op), detached);
     }
 
-    static awaitable<void> tcp_server_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
+    void write_message_to_buffer(std::span<char>& buffer, const Message& m)
+    {
+        INFO("Writing message from buffer, type as integer is {}", +(static_cast<char>(m.type)));
+        buffer[0] = static_cast<char>(m.type);
+
+        std::span<char> archive_buffer{buffer.begin() + 1, buffer.end()};
+        std::ostrstream output_stream(archive_buffer.data(), (int) archive_buffer.size());
+
+        boost::archive::text_oarchive oa{output_stream};
+        oa << m;
+    }
+
+    Message read_message_from_buffer(const std::span<char>& buffer)
+    {
+        Message m {static_cast<MessageType>(buffer[0])};
+        std::istrstream input_stream(buffer.data() + 1, (int) buffer.size());
+        boost::archive::text_iarchive ia{input_stream};
+        ia >> m;
+        return m;
+    }
+
+    awaitable<void> tcp_server_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         try
         {
@@ -101,7 +122,7 @@ namespace hnoker
         }
     }
 
-    static awaitable<void> tcp_client_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
+    awaitable<void> tcp_client_session(tcp::socket socket, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         try
         {
@@ -120,7 +141,7 @@ namespace hnoker
         }
     }
 
-    static awaitable<void> accept_tcp_connections(const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
+    awaitable<void> accept_tcp_connections(const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         auto executor = co_await this_coro::executor;
         tcp::acceptor acceptor(executor, {tcp::v4(), port});
@@ -138,7 +159,7 @@ namespace hnoker
         }
     }
 
-    static awaitable<void> connect_to_tcp_server(const std::string_view host, const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
+    awaitable<void> connect_to_tcp_server(const std::string_view host, const uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         auto executor = co_await this_coro::executor;
         tcp::socket socket(executor);
