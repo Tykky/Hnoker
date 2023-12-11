@@ -21,6 +21,7 @@ namespace hnoker
 
         std::function send_message = [](std::span<char> read_buffer, std::span<char> write_buffer, const std::string& ip, const std::uint16_t& port) -> bool
         {
+            return true;
         };
 
     }
