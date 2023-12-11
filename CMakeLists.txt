@@ -25,6 +25,8 @@ set(srcs
     src/logging.cpp
 	src/player.hpp
 	src/player.cpp
+	src/listener.hpp
+	src/listener.cpp
 )
 
 add_executable(hnoker ${srcs})

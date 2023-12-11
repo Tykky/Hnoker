@@ -97,5 +97,5 @@ void test_player()
 
 int main()
 {
-
+    test_networking_archives_singlemessage();
 }
