@@ -93,7 +93,7 @@ struct SendStatus {
     int elapsed_time;
     bool paused;
     std::uint8_t elements;
-    std::array<int, MAXIMUM_QUEUE_SIZE> queue;
+    int queue[MAXIMUM_QUEUE_SIZE];
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version)
@@ -236,7 +236,7 @@ struct Message
                 qs.serialize(ar, version);
                 break;
             case MessageType::SEND_STATUS:
-                // ss.serialize(ar, version);
+                ss.serialize(ar, version);
                 break;
             case MessageType::BULLY:
                 bl.serialize(ar, version);
