@@ -139,6 +139,11 @@ struct Client {
         ar & port;
         ar & bully_id;
     }
+
+    bool operator==(const Client& rhs)
+    {
+        return ip == rhs.ip;
+    }
 };
 
 struct ClientList {
