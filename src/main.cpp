@@ -29,7 +29,7 @@ void test_networking_archives_singlemessage()
     // Tässä testiversiossa serveri vaan vastaanottaa ja käyttää sitä arvoa playerin kontrolloimiseen,
     // ei kirjota mitään takas
 
-    std::function write_archive = [](std::span<char> rbuf, std::span<char> wbuf, const std::string& ip, std::uint16_t port) mutable -> bool 
+    std::function write_archive = [](std::span<char> rbuf, std::span<char> wbuf, const std::string& ip, std::uint16_t port) mutable -> bool
     {
         INFO("Writing one-byte header and ChangeSong struct to wbuf");
         Message cs_out { MessageType::CHANGE_SONG };
@@ -53,19 +53,17 @@ void test_networking_archives_singlemessage()
         return false;
     };
 
-    const auto port = 55555;
-
     // Tää omaan threadiin, mul meni joku puol tuntii tajuta et toi run on blokkaava calli xd
-    std::jthread xd([&]() mutable { network.async_create_server(port, server_rbuf, server_wbuf, read_write_op); network.run(); });
+    std::jthread xd([&]() mutable { network.async_create_server(LISTENER_SERVER_PORT, server_rbuf, server_wbuf, read_write_op); network.run(); });
 
     // Uuus viesti queueen joka kerta
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::seconds(5));
         INFO("Sending message");
-        
+
         hnoker::network client_network;
-        client_network.async_connect_server("127.0.0.1", port, client_rbuf, client_wbuf, write_archive);
+        client_network.async_connect_server("127.0.0.1", LISTENER_SERVER_PORT, client_rbuf, client_wbuf, write_archive);
         //network.async_connect_server("127.0.0.1", port, client_rbuf, client_wbuf, write_archive);
         client_network.run();
     }
@@ -93,7 +91,6 @@ void test_connector()
     {
         INFO("Trying to read message from buffer")
         Message message = hnoker::read_message_from_buffer(rbuf);
-        INFO("Number of clients: {}", message.cu.num_clients);
         INFO("First client ip: {}", message.cu.clients[0].ip);
         INFO("First client bully id: {}", message.cu.clients[0].bully_id);
         INFO("First client port: {}", message.cu.clients[0].port);
@@ -102,7 +99,7 @@ void test_connector()
 
     hnoker::network server_network;
 
-    std::jthread xd2blyat([&]() { server_network.async_create_server(55555, client_rbuf, client_wbuf, server_callback); server_network.run(); });
+    std::jthread xd2blyat([&]() { server_network.async_create_server(LISTENER_SERVER_PORT, client_rbuf, client_wbuf, server_callback); server_network.run(); });
     xd2blyat.detach();
 
     while (true)
@@ -110,7 +107,7 @@ void test_connector()
         std::this_thread::sleep_for(std::chrono::seconds(3));
         INFO("Sending message");
         hnoker::network client_network;
-        client_network.async_connect_server("127.0.0.1", 12345, client_rbuf, client_wbuf, client_callback);
+        client_network.async_connect_server("127.0.0.1", CONNECTOR_SERVER_PORT, client_rbuf, client_wbuf, client_callback);
         client_network.run();
         INFO("Message sent")
     }
@@ -142,6 +139,6 @@ void test_player()
 
 int main()
 {
-    test_networking_archives_singlemessage();
-    //test_connector();
+    //test_networking_archives_singlemessage();
+    test_connector();
 }

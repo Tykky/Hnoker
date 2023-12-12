@@ -1,14 +1,20 @@
 #pragma once
 
-#include <array>
-#include <cstdint>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/deque.hpp>
+#include <boost/serialization/string.hpp>
+
+#include <array>
+#include <cstdint>
 #include <span>
 #include <variant>
+#include <vector>
 
 #define MAXIMUM_QUEUE_SIZE 128
 #define MAXIMUM_CLIENTS 64
+#define IP_LENGTH 16
 
 enum struct MessageType : std::uint8_t {
     CONTROL_MUSIC = 0,
@@ -92,8 +98,7 @@ struct SendStatus {
     int current_song_id;
     int elapsed_time;
     bool paused;
-    std::uint8_t elements;
-    int queue[MAXIMUM_QUEUE_SIZE];
+    std::deque<int> queue;
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version)
@@ -101,7 +106,6 @@ struct SendStatus {
         ar & current_song_id;
         ar & elapsed_time;
         ar & paused;
-        ar & elements;
         ar & queue;
     }
 };
@@ -124,7 +128,7 @@ struct Bully {
 };
 
 struct Client {
-    char ip[16];
+    std::string ip;
     std::uint16_t port;
     std::uint16_t bully_id;
 
@@ -138,27 +142,23 @@ struct Client {
 };
 
 struct ClientList {
-    std::uint8_t num_clients;
     std::uint16_t bully_id;
-    Client clients[MAXIMUM_CLIENTS];
+    std::vector<Client> clients;
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        ar & num_clients;
         ar & bully_id;
         ar & clients;
     }
 };
 
 struct ClientListUpdate {
-    std::uint8_t num_clients;
-    Client clients[MAXIMUM_CLIENTS];
+    std::vector<Client> clients;
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        ar & num_clients;
         ar & clients;
     }
 };
@@ -200,7 +200,119 @@ struct Message
         }
     }
 
-    const MessageType type;
+    ~Message()
+    {
+        switch (type)
+        {
+            case MessageType::CONTROL_MUSIC:
+                cm.~ControlMusic();
+                break;
+            case MessageType::CHANGE_SONG:
+                cs.~ChangeSong();
+                break;
+            case MessageType::DISCONNECT:
+                dc.~Disconnect();
+                break;
+            case MessageType::CONNECT:
+                cn.~Connect();
+                break;
+            case MessageType::QUERY_STATUS:
+                qs.~QueryStatus();
+                break;
+            case MessageType::SEND_STATUS:
+                ss.~SendStatus();
+                break;
+            case MessageType::BULLY:
+                bl.~Bully();
+                break;
+            case MessageType::CONNECTOR_LIST:
+                cl.~ClientList();
+                break;
+            case MessageType::CONNECTOR_LIST_UPDATE:
+                cu.~ClientListUpdate();
+                break;
+        }
+        type.~MessageType();
+    }
+
+    Message(const Message& other) {
+        type = other.type;
+        switch(type)
+        {
+            case MessageType::CONTROL_MUSIC:
+                cm = other.cm;
+                break;
+            case MessageType::CHANGE_SONG:
+                cs = other.cs;
+                break;
+            case MessageType::DISCONNECT:
+                dc = other.dc;
+                break;
+            case MessageType::CONNECT:
+                cn = other.cn;
+                break;
+            case MessageType::QUERY_STATUS:
+                qs = other.qs;
+                break;
+            case MessageType::SEND_STATUS:
+                ss = other.ss;
+                break;
+            case MessageType::BULLY:
+                bl = other.bl;
+                break;
+            case MessageType::CONNECTOR_LIST:
+                cl = other.cl;
+                break;
+            case MessageType::CONNECTOR_LIST_UPDATE:
+                cu = other.cu;
+                break;
+        }
+    }
+
+    Message(Message&& other) noexcept // Move constructor
+    {
+        type = std::move(other.type);
+        switch(type)
+        {
+            case MessageType::CONTROL_MUSIC:
+                cm = std::move(other.cm);
+                break;
+            case MessageType::CHANGE_SONG:
+                cs = std::move(other.cs);
+                break;
+            case MessageType::DISCONNECT:
+                dc = std::move(other.dc);
+                break;
+            case MessageType::CONNECT:
+                cn = std::move(other.cn);
+                break;
+            case MessageType::QUERY_STATUS:
+                qs = std::move(other.qs);
+                break;
+            case MessageType::SEND_STATUS:
+                ss = std::move(other.ss);
+                break;
+            case MessageType::BULLY:
+                bl = std::move(other.bl);
+                break;
+            case MessageType::CONNECTOR_LIST:
+                cl = std::move(other.cl);
+                break;
+            case MessageType::CONNECTOR_LIST_UPDATE:
+                cu = std::move(other.cu);
+                break;
+        }
+    } 
+    Message& operator=(const Message& other) //Copy assignment
+    {
+        return *this = Message(other);
+    }
+    Message& operator=(Message&& other) noexcept // Move assignment
+    {
+        return *this = Message(other);
+    }
+
+    MessageType type;
 
     union 
     {

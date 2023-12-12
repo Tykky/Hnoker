@@ -140,16 +140,14 @@ namespace player {
     }
 
     const SendStatus MusicPlayer::get_status() {
+        std::lock_guard<std::mutex> queue_lock(queue_mutex);
         SendStatus status
         {
             song_id,
             elapsed,
             paused,
-            static_cast<uint8_t>(song_queue.size())
+            song_queue,
         };
-
-        std::lock_guard<std::mutex> queue_lock(queue_mutex);
-        std::copy(song_queue.cbegin(), song_queue.cend(), &status.queue[0]);
 
         return status;
     }

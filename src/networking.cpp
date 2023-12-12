@@ -16,6 +16,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <strstream>
 
 namespace hnoker 
 {
@@ -91,7 +92,7 @@ namespace hnoker
         boost::archive::text_oarchive oa{output_stream};
         try
         {
-            // tää ei toimi jos messagessa on C array esim ClientList, tolle
+            // tï¿½ï¿½ ei toimi jos messagessa on C array esim ClientList, tolle
             // arraylle oli kai joku oma archive juttu boost::serialization::make_array
             // https://www.boost.org/doc/libs/1_78_0/libs/serialization/doc/wrappers.html#:~:text=boost%3A%3Aserialization%3A%3Amake_array(T*%20t%2C%20std%3A%3Asize_t%20size)%3B
             oa << m;
@@ -99,15 +100,15 @@ namespace hnoker
         catch (std::exception& e)
         {
             INFO("Archiving busted, pls fix");
-            // pitää viel fixaa nää exceptionit 
+            // pitï¿½ï¿½ viel fixaa nï¿½ï¿½ exceptionit 
             throw std::runtime_error("archiving bad and busted");
         }
     }
 
     Message read_message_from_buffer(const std::span<char>& buffer)
     {
-        Message m {static_cast<MessageType>(buffer[0])};
-        std::istrstream input_stream(buffer.data() + 1, (int) buffer.size());
+        Message m { static_cast<MessageType>(buffer[0]) };
+        std::istrstream input_stream(buffer.data() + 1, (int) buffer.size() - 1);
         boost::archive::text_iarchive ia{input_stream};
         try
         {

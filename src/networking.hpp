@@ -5,7 +5,9 @@
 #include <memory>
 #include <span>
 #include <string_view>
-#include <strstream>
+
+#define LISTENER_SERVER_PORT 43210
+#define CONNECTOR_SERVER_PORT 1738
 
 namespace hnoker 
 {
