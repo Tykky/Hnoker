@@ -13,16 +13,6 @@
 
 namespace hnoker
 {
-    static void send_message_to_leader(Message& msg, network& net, const std::string_view leader_ip, const uint16_t leader_port, std::span<char> rb, std::span<char> wb)
-    {
-        std::function message = [&msg](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
-        {
-            write_message_to_buffer(write_buf, msg);
-            return true;
-        };
-        net.async_connect_server(leader_ip, leader_port, rb, wb, message);
-    }
-
     static bool message_handler(Message& msg)
     {
         switch (msg.type)
@@ -60,19 +50,13 @@ namespace hnoker
 
     static void start_listener_server(network& net, std::span<char> rb, std::span<char> wb)
     {
-        std::function server = [](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
-        {
-            Message msg = read_message_from_buffer(read_buf);
-            return message_handler(msg);
-        };
-        net.async_create_server(LISTENER_SERVER_PORT, rb, wb, server);
     }
 
     void start_listener(const std::string_view connector_ip, const uint16_t connector_port)
     {
         INFO("Starting listener");
 
-        player::MusicPlayer player(0);
+        //player::MusicPlayer player(0);
 
         std::array<char, 1024> client_rb;
         std::array<char, 1024> client_wb;
@@ -85,11 +69,23 @@ namespace hnoker
         const uint16_t leader_port = 5555;
 
         Message connect_msg = { MessageType::CONNECT };
-        start_listener_server(net, server_rb, server_wb);
-        send_message_to_leader(connect_msg, net, connector_ip, connector_port, client_rb, client_wb);
+
+        static std::function server = [](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        {
+            Message msg = read_message_from_buffer(read_buf);
+            return message_handler(msg);
+        };
+
+        static std::function message = [&connect_msg](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        {
+            write_message_to_buffer(write_buf, connect_msg);
+            return true;
+        };
+
+        //net.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
+        net.async_connect_server(leader_ip, leader_port, client_rb, client_wb, message);
 
         net.run();
-
     }
 
 }

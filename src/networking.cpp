@@ -11,6 +11,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/write.hpp>
+#include <boost/exception/exception.hpp>
+#include <boost/exception/diagnostic_information.hpp>
 
 #include <cstdint>
 #include <functional>
@@ -63,21 +65,32 @@ namespace hnoker
         ctx->boost_ctx.run();
     }
 
+    void handle_network_eptr(std::exception_ptr eptr)
+    {
+        try
+        {
+            if (eptr)
+                std::rethrow_exception(eptr);
+        }
+        catch (const boost::exception& e)
+        {
+            std::string info = boost::diagnostic_information(e);
+            INFO("NETWORK ERROR ({}:{}): {}", __FILE__, __LINE__, info);
+            throw std::runtime_error("Network error");
+        }
+    }
+
     void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,  const read_write_op_t& read_write_op)
     {
         co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, write_buf, read_write_op), [](std::exception_ptr ep) {
-            if (ep)
-                // TODO: fix exceptions
-                std::rethrow_exception(ep);
+            handle_network_eptr(ep);
         });
     }
 
     void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
         co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, write_buf, read_write_op), [](std::exception_ptr ep) {
-            if (ep)
-                // TODO: fix exceptions
-                std::rethrow_exception(ep);
+            handle_network_eptr(ep);
         });
     }
 

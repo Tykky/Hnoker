@@ -117,9 +117,8 @@ void test_connector()
 void test_listener()
 {
     std::jthread xdc{ []() { start_connector();} };
-    std::jthread xdl{ []() { hnoker::start_listener("127.0.0.1", 5555); }};
-    xdl.detach();
     xdc.detach();
+    hnoker::start_listener("127.0.0.1", CONNECTOR_SERVER_PORT);
 }
 
 void test_player()
