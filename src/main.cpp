@@ -3,6 +3,7 @@
 #include "message_types.hpp"
 #include "networking.hpp"
 #include "player.hpp"
+#include "listener.hpp"
 
 #include <chrono>
 #include <fstream>
@@ -113,6 +114,14 @@ void test_connector()
     }
 }
 
+void test_listener()
+{
+    std::jthread xdc{ []() { start_connector();} };
+    std::jthread xdl{ []() { hnoker::start_listener("127.0.0.1", 5555); }};
+    xdl.detach();
+    xdc.detach();
+}
+
 void test_player()
 {
     player::MusicPlayer player(2);
@@ -140,5 +149,6 @@ void test_player()
 int main()
 {
     //test_networking_archives_singlemessage();
-    test_connector();
+    //test_connector();
+    test_listener();
 }
