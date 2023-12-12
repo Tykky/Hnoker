@@ -82,8 +82,8 @@ namespace hnoker
             return true;
         };
 
-        //net.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
-        net.async_connect_server(leader_ip, leader_port, client_rb, client_wb, message);
+        net.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
+        net.async_connect_server(connector_ip, connector_port, client_rb, client_wb, message);
 
         net.run();
     }
