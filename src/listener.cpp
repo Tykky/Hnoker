@@ -48,15 +48,11 @@ namespace hnoker
         return false;
     }
 
-    static void start_listener_server(network& net, std::span<char> rb, std::span<char> wb)
-    {
-    }
-
     void start_listener(const std::string_view connector_ip, const uint16_t connector_port)
     {
         INFO("Starting listener");
 
-        //player::MusicPlayer player(0);
+        player::MusicPlayer player(2);
 
         std::array<char, 1024> client_rb;
         std::array<char, 1024> client_wb;
@@ -65,8 +61,8 @@ namespace hnoker
 
         network net;
 
-        const std::string leader_ip = "";
-        const uint16_t leader_port = 5555;
+        const std::string leader_ip = "127.0.0.1";
+        const uint16_t leader_port = 4220;
 
         Message connect_msg = { MessageType::CONNECT };
 
