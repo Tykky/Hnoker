@@ -142,5 +142,6 @@ void test_player()
 
 int main()
 {
-    test_connector();
+    test_networking_archives_singlemessage();
+    //test_connector();
 }

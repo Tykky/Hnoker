@@ -64,12 +64,20 @@ namespace hnoker
 
     void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,  const read_write_op_t& read_write_op)
     {
-        co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, write_buf, read_write_op), detached);
+        co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, write_buf, read_write_op), [](std::exception_ptr ep) {
+            if (ep)
+                // TODO: fix exceptions
+                std::rethrow_exception(ep);
+        });
     }
 
     void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
     {
-        co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, write_buf, read_write_op), detached);
+        co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, write_buf, read_write_op), [](std::exception_ptr ep) {
+            if (ep)
+                // TODO: fix exceptions
+                std::rethrow_exception(ep);
+        });
     }
 
     void write_message_to_buffer(std::span<char>& buffer, const Message& m)
@@ -81,7 +89,19 @@ namespace hnoker
         std::ostrstream output_stream(archive_buffer.data(), (int) archive_buffer.size());
 
         boost::archive::text_oarchive oa{output_stream};
-        oa << m;
+        try
+        {
+            // tää ei toimi jos messagessa on C array esim ClientList, tolle
+            // arraylle oli kai joku oma archive juttu boost::serialization::make_array
+            // https://www.boost.org/doc/libs/1_78_0/libs/serialization/doc/wrappers.html#:~:text=boost%3A%3Aserialization%3A%3Amake_array(T*%20t%2C%20std%3A%3Asize_t%20size)%3B
+            oa << m;
+        }
+        catch (std::exception& e)
+        {
+            INFO("Archiving busted, pls fix");
+            // pitää viel fixaa nää exceptionit 
+            throw std::runtime_error("archiving bad and busted");
+        }
     }
 
     Message read_message_from_buffer(const std::span<char>& buffer)
@@ -89,7 +109,15 @@ namespace hnoker
         Message m {static_cast<MessageType>(buffer[0])};
         std::istrstream input_stream(buffer.data() + 1, (int) buffer.size());
         boost::archive::text_iarchive ia{input_stream};
-        ia >> m;
+        try
+        {
+            ia >> m;
+        }
+        catch (std::exception& e)
+        {
+            INFO("Read message busted, pls fix!");
+            throw std::runtime_error("read message busted");
+        }
         return m;
     }
 
@@ -118,7 +146,15 @@ namespace hnoker
             auto ip = socket.remote_endpoint().address();
 
             if (e.code() == boost::asio::error::eof)
-                INFO("Client disconnecting from {}", ip.to_string());
+            {
+                INFO("Client disconnecting from {}", ip.to_string())
+            }
+            else
+            {
+                // TODO: fix exceptions
+                throw std::runtime_error("sever busted XD");
+            }
+               
         }
     }
 
@@ -137,7 +173,14 @@ namespace hnoker
             auto ip = socket.remote_endpoint().address();
 
             if (e.code() == boost::asio::error::eof)
-                INFO("Client disconnecting from {}", ip.to_string());
+            {
+                INFO("Client disconnecting from {}", ip.to_string())
+            }
+            else
+            {
+                // TODO: fix exceptions
+                throw std::runtime_error("sever busted XD");
+            }
         }
     }
 
