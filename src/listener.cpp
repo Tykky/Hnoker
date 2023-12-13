@@ -72,14 +72,14 @@ namespace hnoker
             return message_handler(msg);
         };
 
-        static std::function message = [&connect_msg](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        static std::function send_connect = [&connect_msg](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
         {
             write_message_to_buffer(write_buf, connect_msg);
             return true;
         };
 
         net.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
-        net.async_connect_server(connector_ip, connector_port, client_rb, client_wb, message);
+        net.async_connect_server(connector_ip, connector_port, client_rb, client_wb, send_connect);
 
         net.run();
     }

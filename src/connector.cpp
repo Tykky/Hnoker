@@ -60,20 +60,21 @@ std::jthread create_knocker(const std::string ip, const std::uint16_t port)
 
             Message qs_out{ MessageType::QUERY_STATUS };
 
-            hnoker::write_message_to_buffer(read_span, qs_out);
-
             INFO("Knocker created for {}:{}", ip, LISTENER_SERVER_PORT);
-            hnoker::read_write_op_t knocker_callback = [](std::span<char> xd1, std::span<char> xd2, const std::string& ip, std::uint16_t port) -> bool
+            hnoker::read_write_op_t knocker_callback = [&qs_out](std::span<char> xd1, std::span<char> xd2, const std::string& ip, std::uint16_t port) -> bool
             {
+                hnoker::write_message_to_buffer(xd2, qs_out);
                 return true;
             };
+
+            hnoker::network knocker_network;
 
             while (true)
             {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
-                hnoker::network knocker_network;
                 INFO("Knocking {}:{}", ip, LISTENER_SERVER_PORT);
                 knocker_network.async_connect_server(ip, LISTENER_SERVER_PORT, read_span, write_span, knocker_callback);
+                knocker_network.run();
             }
         }
     };

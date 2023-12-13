@@ -65,7 +65,7 @@ namespace hnoker
         ctx->boost_ctx.run();
     }
 
-    void handle_network_eptr(std::exception_ptr eptr)
+    static void handle_network_eptr(std::exception_ptr eptr)
     {
         try
         {
