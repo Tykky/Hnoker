@@ -13,37 +13,105 @@
 
 namespace hnoker
 {
-    static bool message_handler(Message& msg)
+
+    static bool cm_handler(ControlMusic& cm, player::MusicPlayer& player)
+    {
+        INFO("Listener recieved CONTROL_MUSIC");
+        SendStatus status = player.get_status();
+        switch (cm.op)
+        {
+            case ControlOperation::START:
+                if (status.paused)
+                    player.toggle_pause();
+                break;
+            case ControlOperation::STOP:
+                if (!status.paused)
+                    player.toggle_pause();
+                break;
+            case ControlOperation::SKIP:
+                player.skip();
+                break;
+        }
+        return false;
+    }
+
+    static bool cs_handler(ChangeSong& cs, player::MusicPlayer& player)
+    {
+        INFO("Listener recieved CHANGE_SONG");
+        if (cs.add_to_queue)
+            player.add_to_queue(cs.song_id);
+        return false;
+    }
+
+    static bool dc_handler(Disconnect& dc, player::MusicPlayer& player)
+    {
+        INFO("Listener recieved DISCONNECT");
+        return false;
+    }
+
+    static bool cn_handler(Connect& cn)
+    {
+        INFO("Listener recieved CONNECT");
+        return false;
+    }
+
+    static bool qs_handler(QueryStatus& qs, player::MusicPlayer& player, std::span<char> wbuf)
+    {
+        INFO("Listener recieved QUERY_STATUS");
+        Message msg{ MessageType::SEND_STATUS };
+        msg.ss = player.get_status();
+        write_message_to_buffer(wbuf, msg);
+        return false;
+    }
+
+    static bool ss_handler(SendStatus& ss)
+    {
+        INFO("Listener recieved SEND_STATUS");
+        return false;
+    }
+
+    static bool bl_handler(Bully& bl)
+    {
+        INFO("Listenere recieved BULLY");
+        return false;
+    }
+
+    static bool cl_handler(ClientList& cl, ClientList& listener_state)
+    {
+        INFO("Listener recieved CONNECTOR_LIST");
+        listener_state = cl;
+        return false;
+    }
+
+    static bool clu_handler(ClientListUpdate& clu, ClientList& listener_state)
+    {
+        INFO("Listener recieved CONNECTOR_LIST_UPDATE");
+        listener_state.clients = clu.clients;
+        return false;
+    }
+
+    static bool message_handler(Message& msg, player::MusicPlayer& player, std::span<char> wbuf, ClientList& listener_state)
     {
         switch (msg.type)
         {
             case MessageType::CONTROL_MUSIC:
-                INFO("Listener recieved CONTROL_MUSIC");
-                break;
+                return cm_handler(msg.cm, player);
             case MessageType::CHANGE_SONG:
-                INFO("Listener recieved CHANGE_SONG");
-                break;
+                return cs_handler(msg.cs, player);
             case MessageType::DISCONNECT:
-                INFO("Listener recieved DISCONNECT");
-                break;
+                return dc_handler(msg.dc, player);
             case MessageType::CONNECT:
-                INFO("Listener recieved CONNECT");
-                break;
+                return cn_handler(msg.cn);
             case MessageType::QUERY_STATUS:
-                INFO("Listener recieved QUERY_STATUS");
-                break;
+                return qs_handler(msg.qs, player, wbuf);
             case MessageType::SEND_STATUS:
-                INFO("Listener recieved SEND_STATUS");
-                break;
+                return ss_handler(msg.ss);
             case MessageType::BULLY:
-                INFO("Listenere recieved BULLY");
-                break;
+                return bl_handler(msg.bl);
             case MessageType::CONNECTOR_LIST:
-                INFO("Listener recieved CONNECTOR_LIST");
-                break;
+                return cl_handler(msg.cl, listener_state);
             case MessageType::CONNECTOR_LIST_UPDATE:
-                INFO("Listener recieved CONNECTOR_LIST_UPDATE");
-                break;
+                return clu_handler(msg.cu, listener_state);
         }
         return false;
     }
@@ -53,6 +121,7 @@ namespace hnoker
         INFO("Starting listener");
 
         player::MusicPlayer player(2);
+        ClientList listener_state_cl;
 
         std::array<char, 1024> client_rb;
         std::array<char, 1024> client_wb;
@@ -66,10 +135,10 @@ namespace hnoker
 
         Message connect_msg = { MessageType::CONNECT };
 
-        static std::function server = [](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        static std::function server = [&player, &listener_state_cl](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
         {
             Message msg = read_message_from_buffer(read_buf);
-            return message_handler(msg);
+            return message_handler(msg, player, write_buf, listener_state_cl);
         };
 
         static std::function send_connect = [&connect_msg](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
@@ -83,5 +152,4 @@ namespace hnoker
 
         net.run();
     }
-
 }
