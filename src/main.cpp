@@ -12,6 +12,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <unordered_map>
 
 void test_networking_archives_singlemessage()
 {
@@ -146,9 +147,59 @@ void test_player()
     player.stopper.request_stop();
 }
 
-int main()
+using string_map = std::unordered_map<std::string, std::vector<std::string>>;
+template <class Keyword>
+string_map parse_cmd_arg(std::vector<std::string> as, Keyword keyword)
 {
-    //test_networking_archives_singlemessage();
-    //test_connector();
-    test_listener();
+    string_map result;
+
+    std::string flag;
+    for (auto&& x : as)
+    {
+        auto f = keyword(x);
+        if (f.empty())
+        {
+            result[flag].push_back(x);
+        }
+        else
+        {
+            flag = f.front();
+            result[flag];
+            flag = f.back();
+        }
+    }
+    return result;
+}
+
+int main(int argc, const char* argv[])
+{
+    std::vector<std::string> args(argv + 1, argv + argc);
+    std::unordered_map<std::string, std::string> keys = 
+    {
+        { "--mode", "mode" },
+        { "--test", "test" }
+    };
+
+    auto arg_map = parse_cmd_arg(args, [&](auto&& s) -> std::vector<std::string> {
+        if (keys.count(s) > 0)
+            return { keys[s] };
+        else
+            return {};
+    });
+
+    std::string mode = arg_map.find("mode") != arg_map.end() ? arg_map["mode"].size() > 0 ? arg_map["mode"][0] : "" : "";
+    std::string test = arg_map.find("test") != arg_map.end() ? arg_map["test"].size() > 0 ? arg_map["test"][0] : "" : "";
+
+    if (mode == "listener")
+    {
+        test_listener();
+    }
+    else if (mode == "connector")
+    {
+        test_connector();
+    }
+    else if (test == "singlemessage")
+    {
+        test_networking_archives_singlemessage();
+    }
 }
