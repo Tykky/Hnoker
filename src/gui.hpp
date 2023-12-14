@@ -12,7 +12,7 @@ namespace hnoker
         Gui()
         {
             InitWindow(768, 480, "hnoker");
-            SetTargetFPS(420);
+            SetTargetFPS(0);
             load_theme();
         }
 
