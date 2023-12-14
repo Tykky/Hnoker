@@ -7,8 +7,11 @@
 
 namespace hnoker
 {
+    using callback = std::function<void()>;
     struct Gui
     {
+        Gui() {}
+
         void draw_gui();
         void load_theme();
 
@@ -17,11 +20,15 @@ namespace hnoker
         std::string button_next  = "next";
         std::string button_prev  = "prev";
 
-        std::function<void()> pause_callback = [](){};
-        std::function<void()> next_callback = [](){};
-        std::function<void()> prev_callback = [](){};
+        const std::function<void()>* pause_callback = nullptr;
+        const std::function<void()>* next_callback = nullptr;
+        const std::function<void()>* prev_callback = nullptr;
 
-        float progress_bar = 0.0f;
+        int dps = 0;
+        float spd = 0.1f;
+
+        float progress_bar = 0.5f;
+        bool music_playing = true;
 
     private:
         std::string backgroundText = "";
@@ -35,6 +42,8 @@ namespace hnoker
         bool button_next_press = false;
         bool button_prev_press = false;
 
+        std::vector<std::string> gui_client_list = {};
+        std::vector<std::string> gui_song_queue = {};
 
         Rectangle layoutRecs[10] =
         {

@@ -1,6 +1,8 @@
 #include "gui.hpp"
 #include "raylib.h"
 #include "raygui.h"
+#include <cmath>
+#include <numbers>
 
 namespace hnoker
 {
@@ -564,7 +566,10 @@ namespace hnoker
     void Gui::draw_gui()
     {
         BeginDrawing();
+
+
         ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+
         GuiPanel(layoutRecs[0], backgroundText.c_str());
         GuiStatusBar(layoutRecs[1], song_name.c_str());
         button_pause_press = GuiButton(layoutRecs[2], button_pause.c_str());
@@ -575,16 +580,60 @@ namespace hnoker
         GuiGroupBox(layoutRecs[7], GroupBox007Text.c_str());
         GuiGroupBox(layoutRecs[8], GroupBox008Text.c_str());
         GuiLine(layoutRecs[9], Line010Text.c_str());
+
+        dps += 1;
+
+        if (music_playing)
+        {
+            progress_bar = 0.5f * (std::sin(float(dps) * spd) + 1);
+        }
+
+
+        for (int i = 0; i < gui_client_list.size(); ++i)
+        {
+            auto& client = gui_client_list[i];
+            int height = 21;
+            GuiTextBox({530, float(100 + height * i), 188, float(20)}, const_cast<char*>(client.c_str()), 10, false);
+        }
+
+        for (int i = 0; i < gui_song_queue.size(); ++i)
+        {
+            auto& song = gui_song_queue[i];
+            int height = 21;
+            GuiTextBox({28, float(350 + height * i), 450, 20}, const_cast<char*>(song.c_str()), 10, false);
+        }
+
         EndDrawing();
 
         if (button_pause_press)
-            pause_callback();
+        {
+            if (pause_callback)
+                (*pause_callback)();
+            if (music_playing)
+            {
+                button_pause = "continue";
+                music_playing = false;
+            }
+            else
+            {
+                button_pause = "pause";
+                music_playing = true;
+            }
+        }
 
         if (button_next_press)
-            next_callback();
+        {
+            if (next_callback)
+                (*next_callback)();
+            spd += 0.01f;
+        }
 
         if (button_prev_press)
-            prev_callback();
+        {
+            if (prev_callback)
+                (*prev_callback)();
+            spd -= 0.01f;
+        }
 
     }
 

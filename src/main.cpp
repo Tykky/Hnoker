@@ -121,12 +121,12 @@ void test_connector()
     }
 }
 
-void test_listener()
+void test_listener(hnoker::Gui& gui)
 {
     std::jthread xdc{ []() { start_connector();} };
     xdc.detach();
     std::string conn_ip = "127.0.0.1";
-    hnoker::start_listener(conn_ip, CONNECTOR_SERVER_PORT);
+    hnoker::start_listener(conn_ip, CONNECTOR_SERVER_PORT, gui);
 }
 
 void test_player()
@@ -199,9 +199,12 @@ int main(int argc, const char* argv[])
     std::string mode = arg_map.find("mode") != arg_map.end() ? arg_map["mode"].size() > 0 ? arg_map["mode"][0] : "" : "";
     std::string test = arg_map.find("test") != arg_map.end() ? arg_map["test"].size() > 0 ? arg_map["test"][0] : "" : "";
 
+    hnoker::Gui gui {};
+    gui.load_theme();
+
     if (mode == "listener")
     {
-        //test_listener();
+        test_listener(gui);
     }
     else if (mode == "connector")
     {
@@ -212,26 +215,5 @@ int main(int argc, const char* argv[])
         test_networking_archives_singlemessage();
     }
 
-    Rectangle panelRec = { 20, 40, 200, 150 };
-    Rectangle panelContentRec = {0, 0, 340, 340 };
-    Rectangle panelView = { 0 };
-    Vector2 panelScroll = { 99, -20 };
-
-    bool showContentArea = true;
-
-    bool WindowBox000Active = true;
-    bool Button001Pressed = false;
-
-    std::string spidar = "spidar";
-    
-    hnoker::Gui gui;
-    gui.load_theme();
-
-    int i = 0;
-
-    while (!WindowShouldClose())
-    {
-        gui.draw_gui();
-    }
 
 }

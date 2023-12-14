@@ -4,6 +4,9 @@
 #include "message_types.hpp"
 #include "networking.hpp"
 #include "player.hpp"
+#include "gui.hpp"
+
+#include <raylib.h>
 
 #include <functional>
 #include <array>
@@ -116,7 +119,11 @@ namespace hnoker
         return false;
     }
 
-    void start_listener(const std::string_view connector_ip, const uint16_t connector_port)
+    static void listener_send_control(ControlMusic& cm, network& net)
+    {
+    }
+
+    void start_listener(const std::string_view connector_ip, const uint16_t connector_port, Gui& gui)
     {
         INFO("Starting listener");
 
@@ -150,7 +157,18 @@ namespace hnoker
         net.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
         net.async_connect_server(connector_ip, connector_port, client_rb, client_wb, send_connect);
 
-        net.run();
+        std::jthread th{ [&]() {
+            net.run();
+        }};
+
+        th.detach();
+           
+        while (!WindowShouldClose())
+        {
+            gui.draw_gui();
+        }
+
 
     }
-}
+
+  }
