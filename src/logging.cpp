@@ -15,7 +15,7 @@ namespace hnoker
         logger()
         {
             spdlog::init_thread_pool(8192, HNOKER_LOGGER_THREAD_COUNT);
-            //sinks.emplace_back(std::make_unique<spdlog::sinks::stdout_color_sink_mt>());
+            sinks.emplace_back(std::make_unique<spdlog::sinks::stdout_color_sink_mt>());
             sinks.emplace_back(std::make_unique<spdlog::sinks::daily_file_sink_mt>("logs/hnoker_log", 0, 0, false, 3));
             logger_instance = std::make_shared<spdlog::async_logger>(HNOKER_LOGGER_NAME, sinks.begin(), sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
             logger_instance->flush_on(spdlog::level::info);
