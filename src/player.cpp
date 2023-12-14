@@ -127,7 +127,7 @@ namespace player {
         {
             song_id = song_queue.front();
             song_queue.pop_front();
-            elapsed = -1;
+            elapsed = 0.0f;
             INFO("Skipped")
             return;
         }
