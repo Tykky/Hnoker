@@ -114,7 +114,7 @@ namespace player {
         std::lock_guard<std::mutex> queue_lock(queue_mutex);
         song_id = song_queue.front();
         song_queue.pop_front();
-        elapsed = -1;
+        elapsed = 0.0f;
         INFO("Lock obtained and skipped to new song")
     }
 
