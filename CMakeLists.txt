@@ -12,6 +12,7 @@ endif()
 
 find_package(Boost 1.83.0 REQUIRED COMPONENTS system serialization)
 find_package(spdlog 1.12.0 REQUIRED)
+find_package(raylib 4.5.0 REQUIRED)
 
 set(srcs
 	src/main.cpp
@@ -27,10 +28,12 @@ set(srcs
 	src/player.cpp
 	src/listener.hpp
 	src/listener.cpp
+	src/gui.hpp
+	src/gui.cpp
 )
 
 add_executable(hnoker ${srcs})
-target_include_directories(hnoker PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(hnoker PRIVATE ${Boost_LIBRARIES} spdlog::spdlog)
+target_include_directories(hnoker PRIVATE ${Boost_INCLUDE_DIRS} "ext")
+target_link_libraries(hnoker PRIVATE ${Boost_LIBRARIES} spdlog::spdlog raylib)
 
 set_property(TARGET hnoker PROPERTY CXX_STANDARD 20)

@@ -5,6 +5,12 @@
 #include "player.hpp"
 #include "listener.hpp"
 
+#include "raylib.h"
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
+#include "gui.hpp"
+
 #include <chrono>
 #include <fstream>
 #include <functional>
@@ -173,6 +179,9 @@ string_map parse_cmd_arg(std::vector<std::string> as, Keyword keyword)
 
 int main(int argc, const char* argv[])
 {
+    InitWindow(768, 480, "hnoker");
+    SetTargetFPS(60);
+
     std::vector<std::string> args(argv + 1, argv + argc);
     std::unordered_map<std::string, std::string> keys = 
     {
@@ -192,7 +201,7 @@ int main(int argc, const char* argv[])
 
     if (mode == "listener")
     {
-        test_listener();
+        //test_listener();
     }
     else if (mode == "connector")
     {
@@ -202,4 +211,27 @@ int main(int argc, const char* argv[])
     {
         test_networking_archives_singlemessage();
     }
+
+    Rectangle panelRec = { 20, 40, 200, 150 };
+    Rectangle panelContentRec = {0, 0, 340, 340 };
+    Rectangle panelView = { 0 };
+    Vector2 panelScroll = { 99, -20 };
+
+    bool showContentArea = true;
+
+    bool WindowBox000Active = true;
+    bool Button001Pressed = false;
+
+    std::string spidar = "spidar";
+    
+    hnoker::Gui gui;
+    gui.load_theme();
+
+    int i = 0;
+
+    while (!WindowShouldClose())
+    {
+        gui.draw_gui();
+    }
+
 }
