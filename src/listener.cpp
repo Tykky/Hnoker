@@ -158,7 +158,7 @@ namespace hnoker
         }};
         th.detach();
            
-        player.start_player();
+        player.start_player(listener_state_cl);
 
     }
 

@@ -38,7 +38,7 @@ namespace player {
         }
     }
 
-    void MusicPlayer::start_player()
+    void MusicPlayer::start_player(ClientList& cl)
     {
         std::string song_name = "";
 
@@ -64,6 +64,7 @@ namespace player {
         song_queue.push_back(1);
         song_queue.push_back(2);
         song_queue.push_back(1);
+        song_queue.push_back(2);
         song_queue.push_back(2);
 
         while (true)
@@ -92,11 +93,18 @@ namespace player {
                 g.song_name = song_name;
                 g.progress_bar = elapsed / duration;
 
+
                 g.gui_song_queue.clear();
                 for (int si : song_queue)
                 {
                     const auto& [a, n, d] = songs.at(si);
                     g.gui_song_queue.push_back(std::format("{} - {} : {}", a, n, d));
+                }
+
+                g.gui_client_list.clear();
+                for (Client c : cl.clients)
+                {
+                    g.gui_client_list.push_back(c.ip);
                 }
 
             }

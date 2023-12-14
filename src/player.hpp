@@ -53,7 +53,7 @@ namespace player {
         std::stop_source stopper;
 
         MusicPlayer(int initial_song);
-        void start_player();
+        void start_player(ClientList& list);
         void next_song();
         void skip();
         void add_to_queue(int song_id);
