@@ -2,6 +2,7 @@
 
 #include "logging.hpp"
 #include "message_types.hpp"
+#include "gui.hpp"
 
 #include <array>
 #include <atomic>
@@ -17,6 +18,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include "Gui.hpp"
+
 namespace player {
     using std::chrono::time_point;
     using std::chrono::steady_clock;
@@ -30,22 +33,27 @@ namespace player {
         std::jthread thread;
         std::deque<int> song_queue;
         std::mutex queue_mutex;
-        std::atomic_int elapsed;
+        std::atomic<float> elapsed;
         std::atomic_bool paused;
         std::mutex pause_mutex;
         std::mutex wait_mutex;
         std::condition_variable pause_wait;
         std::condition_variable queue_wait;
-        time_point<steady_clock> next_second;
+
+        hnoker::Gui g;
+
+        time_point<steady_clock> start_frame;
+        time_point<steady_clock> end_frame;
+        float delta_t = 0.0f;
 
         void pause();
         void wait_if_queue_empty();
-        void start_thread();
 
     public:
         std::stop_source stopper;
 
         MusicPlayer(int initial_song);
+        void start_player();
         void next_song();
         void skip();
         void add_to_queue(int song_id);

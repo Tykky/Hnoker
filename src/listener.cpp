@@ -4,9 +4,6 @@
 #include "message_types.hpp"
 #include "networking.hpp"
 #include "player.hpp"
-#include "gui.hpp"
-
-#include <raylib.h>
 
 #include <functional>
 #include <array>
@@ -16,7 +13,6 @@
 
 namespace hnoker
 {
-
     static bool cm_handler(ControlMusic& cm, player::MusicPlayer& player)
     {
         INFO("Listener recieved CONTROL_MUSIC");
@@ -123,11 +119,11 @@ namespace hnoker
     {
     }
 
-    void start_listener(const std::string_view connector_ip, const uint16_t connector_port, Gui& gui)
+    void start_listener(const std::string_view connector_ip, const uint16_t connector_port)
     {
         INFO("Starting listener");
 
-        player::MusicPlayer player(2);
+        player::MusicPlayer player(1);
         ClientList listener_state_cl;
 
         std::array<char, 1024> client_rb;
@@ -135,7 +131,7 @@ namespace hnoker
         std::array<char, 1024> server_rb;
         std::array<char, 1024> server_wb;
 
-        network net;
+        network listener_server_network;
 
         const std::string leader_ip = "127.0.0.1";
         const uint16_t leader_port = 4220;
@@ -154,20 +150,15 @@ namespace hnoker
             return true;
         };
 
-        net.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
-        net.async_connect_server(connector_ip, connector_port, client_rb, client_wb, send_connect);
+        listener_server_network.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
+        listener_server_network.async_connect_server(connector_ip, connector_port, client_rb, client_wb, send_connect);
 
         std::jthread th{ [&]() {
-            net.run();
+            listener_server_network.run();
         }};
-
         th.detach();
            
-        while (!WindowShouldClose())
-        {
-            gui.draw_gui();
-        }
-
+        player.start_player();
 
     }
 

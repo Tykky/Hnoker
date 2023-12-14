@@ -20,7 +20,6 @@ namespace player {
     void MusicPlayer::pause() {
         std::unique_lock<std::mutex> pause_lock(pause_mutex);
         pause_wait.wait(pause_lock, [&](){ return !paused; });
-        next_second = clock.now() + 1s;
     }
 
     void MusicPlayer::wait_if_queue_empty() {
@@ -39,52 +38,74 @@ namespace player {
         }
     }
 
-    void MusicPlayer::start_thread()
+    void MusicPlayer::start_player()
     {
-        thread = std::jthread([&]()
+        std::string song_name = "";
+
+        std::function<void()> stop_callback = [this]() 
         {
-            std::cout << "\n";
-            while (true)
+            paused = true;
+        };
+
+        std::function<void()> start_callback = [this]()
+        {
+            paused = false;
+        };
+
+        std::function<void()> skip_callback = [this]()
+        {
+            skip();
+        };
+
+        g.start_callback = &start_callback;
+        g.stop_callback = &stop_callback;
+        g.skip_callback = &skip_callback;
+
+        song_queue.push_back(1);
+        song_queue.push_back(2);
+        song_queue.push_back(1);
+        song_queue.push_back(2);
+
+        while (true)
+        {
+            if (stopper.stop_requested())
             {
-                next_second = clock.now() + 1s;
-                const int song_at_start = song_id;
-                bool broke = false;
-
-                const auto& [artist, name, duration] = songs.at(song_at_start);
-
-                for (elapsed = 0; elapsed <= duration; ++elapsed)
-                {
-                    std::cout << std::format("\033[F{} - {:<32}\n{:02}:{:02}", artist, name, elapsed / 60, elapsed % 60);
-
-                    std::this_thread::sleep_until(next_second);
-                    next_second += 1s;
-
-                    if (paused)
-                    {
-                        pause();
-                    }
-
-                    if (stopper.stop_requested())
-                    {
-                        return;
-                    }
-
-                    if (song_id != song_at_start)
-                    {
-                        broke = true;
-                        break;
-                    }
-                }
-
-                if (!broke)
-                {
-                    next_song();
-                }
+                //break;
             }
-        });
+
+            if (!paused)
+            {
+                end_frame = clock.now();
+                delta_t = std::chrono::duration<float, std::ratio<1, 1>>(end_frame - start_frame).count();
+                start_frame = clock.now();
+
+                if (delta_t > 0 && delta_t < 1)
+                    elapsed += delta_t;
+
+                bool broke = false;
+                const auto& [artist, name, duration] = songs.at(song_id);
+
+                if (elapsed > duration)
+                    next_song();
+
+                song_name = std::format("{} - {} : {:.1f}", artist, name, elapsed.load());
+                g.song_name = song_name;
+                g.progress_bar = elapsed / duration;
+
+                g.gui_song_queue.clear();
+                for (int si : song_queue)
+                {
+                    const auto& [a, n, d] = songs.at(si);
+                    g.gui_song_queue.push_back(std::format("{} - {} : {}", a, n, d));
+                }
+
+            }
+
+            g.draw_gui();
+        }
     }
 
-    MusicPlayer::MusicPlayer(int initial_song) : song_id(initial_song) { start_thread(); };
+    MusicPlayer::MusicPlayer(int initial_song) : song_id(initial_song) { };
 
     void MusicPlayer::next_song()
     {

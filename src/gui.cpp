@@ -567,27 +567,18 @@ namespace hnoker
     {
         BeginDrawing();
 
-
         ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
         GuiPanel(layoutRecs[0], backgroundText.c_str());
         GuiStatusBar(layoutRecs[1], song_name.c_str());
-        button_pause_press = GuiButton(layoutRecs[2], button_pause.c_str());
-        button_next_press = GuiButton(layoutRecs[3], button_next.c_str());
-        button_prev_press = GuiButton(layoutRecs[4], button_prev.c_str());
-        GuiProgressBar(layoutRecs[5], ProgressBar006Text.c_str(), NULL, &progress_bar, 0, 1);
+        button_start_press = GuiButton(layoutRecs[2], button_start.c_str());
+        button_stop_press = GuiButton(layoutRecs[3], button_stop.c_str());
+        button_skip_press = GuiButton(layoutRecs[4], button_skip.c_str());
+        GuiProgressBar(layoutRecs[5], ProgressBar006Text.c_str(), NULL, &progress_bar, 0.0f, 1.0f);
         GuiLabel(layoutRecs[6], Label006Text.c_str());
         GuiGroupBox(layoutRecs[7], GroupBox007Text.c_str());
         GuiGroupBox(layoutRecs[8], GroupBox008Text.c_str());
         GuiLine(layoutRecs[9], Line010Text.c_str());
-
-        dps += 1;
-
-        if (music_playing)
-        {
-            progress_bar = 0.5f * (std::sin(float(dps) * spd) + 1);
-        }
-
 
         for (int i = 0; i < gui_client_list.size(); ++i)
         {
@@ -605,34 +596,30 @@ namespace hnoker
 
         EndDrawing();
 
-        if (button_pause_press)
+        if (button_start_press)
         {
-            if (pause_callback)
-                (*pause_callback)();
+            if (start_callback)
+                (*start_callback)();
             if (music_playing)
             {
-                button_pause = "continue";
                 music_playing = false;
             }
             else
             {
-                button_pause = "pause";
                 music_playing = true;
             }
         }
 
-        if (button_next_press)
+        if (button_stop_press)
         {
-            if (next_callback)
-                (*next_callback)();
-            spd += 0.01f;
+            if (stop_callback)
+                (*stop_callback)();
         }
 
-        if (button_prev_press)
+        if (button_skip_press)
         {
-            if (prev_callback)
-                (*prev_callback)();
-            spd -= 0.01f;
+            if (skip_callback)
+                (*skip_callback)();
         }
 
     }

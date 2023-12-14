@@ -9,8 +9,6 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#include "gui.hpp"
-
 #include <chrono>
 #include <fstream>
 #include <functional>
@@ -121,12 +119,12 @@ void test_connector()
     }
 }
 
-void test_listener(hnoker::Gui& gui)
+void test_listener()
 {
     std::jthread xdc{ []() { start_connector();} };
     xdc.detach();
     std::string conn_ip = "127.0.0.1";
-    hnoker::start_listener(conn_ip, CONNECTOR_SERVER_PORT, gui);
+    hnoker::start_listener(conn_ip, CONNECTOR_SERVER_PORT);
 }
 
 void test_player()
@@ -179,9 +177,6 @@ string_map parse_cmd_arg(std::vector<std::string> as, Keyword keyword)
 
 int main(int argc, const char* argv[])
 {
-    InitWindow(768, 480, "hnoker");
-    SetTargetFPS(60);
-
     std::vector<std::string> args(argv + 1, argv + argc);
     std::unordered_map<std::string, std::string> keys = 
     {
@@ -199,12 +194,9 @@ int main(int argc, const char* argv[])
     std::string mode = arg_map.find("mode") != arg_map.end() ? arg_map["mode"].size() > 0 ? arg_map["mode"][0] : "" : "";
     std::string test = arg_map.find("test") != arg_map.end() ? arg_map["test"].size() > 0 ? arg_map["test"][0] : "" : "";
 
-    hnoker::Gui gui {};
-    gui.load_theme();
-
     if (mode == "listener")
     {
-        test_listener(gui);
+        test_listener();
     }
     else if (mode == "connector")
     {
