@@ -196,11 +196,12 @@ int main(int argc, const char* argv[])
 
     if (mode == "listener")
     {
-        test_listener();
+        const char* conn_ip = "127.0.0.1";
+        hnoker::start_listener(conn_ip, CONNECTOR_SERVER_PORT);
     }
     else if (mode == "connector")
     {
-        test_connector();
+        start_connector();
     }
     else if (test == "singlemessage")
     {

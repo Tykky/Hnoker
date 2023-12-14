@@ -1,4 +1,5 @@
 #include "player.hpp"
+#include "networking.hpp"
 
 
 namespace player {
@@ -40,19 +41,24 @@ namespace player {
 
     void MusicPlayer::start_player(ClientList& cl)
     {
+        hnoker::network net;
+
         std::string song_name = "";
 
-        std::function<void()> stop_callback = [this]() 
+        std::string leader_ip = "";
+        std::uint16_t leader_port = 0;
+
+        std::function<void()> stop_callback = [&,this]() 
         {
             paused = true;
         };
 
-        std::function<void()> start_callback = [this]()
+        std::function<void()> start_callback = [&,this]()
         {
             paused = false;
         };
 
-        std::function<void()> skip_callback = [this]()
+        std::function<void()> skip_callback = [&,this]()
         {
             skip();
         };
@@ -104,7 +110,9 @@ namespace player {
                 g.gui_client_list.clear();
                 for (Client c : cl.clients)
                 {
-                    g.gui_client_list.push_back(c.ip);
+                    std::uint16_t leader = cl.bully_id;
+                    std::uint16_t client_id = c.bully_id;
+                    g.gui_client_list.push_back(std::format("{} {}", c.ip, client_id == leader ? "- BULLY" : ""));
                 }
 
             }

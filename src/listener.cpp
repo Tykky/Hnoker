@@ -133,9 +133,6 @@ namespace hnoker
 
         network listener_server_network;
 
-        const std::string leader_ip = "127.0.0.1";
-        const uint16_t leader_port = 4220;
-
         Message connect_msg = { MessageType::CONNECT };
 
         static std::function server = [&player, &listener_state_cl](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
