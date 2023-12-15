@@ -76,7 +76,7 @@ std::jthread create_knocker(const std::string ip, const std::uint16_t port)
             {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 INFO("Knocking {}:{}", ip, LISTENER_SERVER_PORT);
-                knocker_network.async_connect_server(ip, LISTENER_SERVER_PORT, read_span, write_span, knocker_callback);
+                knocker_network.async_connect_server(ip, LISTENER_SERVER_PORT, read_span, write_span, knocker_callback, hnoker::default_timeout_handler);
                 knocker_network.run();
             }
         }

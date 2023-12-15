@@ -24,7 +24,9 @@ namespace player {
     }
 
     void MusicPlayer::wait_if_queue_empty() {
-        INFO("Ran out of music to play, waiting for new song")
+        INFO("Ran out of music to play, waiting for new song");
+        const unsigned int max_wait = 10;
+        unsigned int wait = 0;
         while (true)
         {
             {
@@ -36,6 +38,7 @@ namespace player {
             }
             std::this_thread::sleep_for(0.2s);
             INFO("Still waiting...")
+            wait++;
         }
     }
 
