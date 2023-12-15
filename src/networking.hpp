@@ -27,7 +27,7 @@ namespace hnoker
     void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op, const timeout_handler& eh);
     void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op, const timeout_handler& eh);
 
-    void write_message_to_buffer(std::span<char>& buffer, const Message& m);
+    void write_message_to_buffer(std::span<char> buffer, const Message& m);
     Message read_message_from_buffer(const std::span<char>& buffer);
 
     struct network

@@ -42,28 +42,75 @@ namespace player {
         }
     }
 
-    void MusicPlayer::start_player(ClientList& cl)
+    static bool send_message_to_leader(const std::string_view leader_ip, const std::uint16_t port, const Message& msg)
     {
         hnoker::network net;
 
+        std::array<char, 1024> rb;
+        std::array<char, 1024> wb;
+
+        if (leader_ip == "" || port == 0)
+        {
+            INFO("Message was not sent to leader due unknown leader ip or port number!");
+            return false;
+        }
+
+        std::function write_op = [&msg](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        {
+            hnoker::write_message_to_buffer(write_buf, msg);
+            return false;
+        };
+
+        constexpr unsigned int max_tries = 2;
+        bool message_success = true;
+
+        hnoker::timeout_handler th = [&, try_count = 0]() mutable
+        {
+            while (++try_count <= max_tries)
+            {
+                message_success = false;
+                INFO("Timed out while sending a message to the leader!, tries {}/{} remaining!", try_count, max_tries);
+                hnoker::write_message_to_buffer(wb, msg);
+            }
+        };
+
+        net.async_connect_server(leader_ip, port, rb, wb, write_op, th);
+        net.run();
+
+        return message_success;
+    }
+
+    void MusicPlayer::start_player(ClientList& cl)
+    {
         std::string song_name = "";
 
-        std::string leader_ip = "";
-        std::uint16_t leader_port = 0;
+        std::string leader_ip = "127.0.0.1";
+        std::uint16_t leader_port = 5555;
+
+        Message stop_msg = { MessageType::CONTROL_MUSIC };
+        Message start_msg = { MessageType::CONTROL_MUSIC };
+        Message skip_msg = { MessageType::CONTROL_MUSIC };
+        stop_msg.cm.op = ControlOperation::STOP;
+        start_msg.cm.op = ControlOperation::START;
+        skip_msg.cm.op = ControlOperation::SKIP;
+
 
         std::function<void()> stop_callback = [&,this]() 
         {
-            paused = true;
+            if (send_message_to_leader(leader_ip, leader_port, stop_msg))
+                paused = true;
         };
 
         std::function<void()> start_callback = [&,this]()
         {
-            paused = false;
+            if (send_message_to_leader(leader_ip, leader_port, start_msg))
+                paused = false;
         };
 
         std::function<void()> skip_callback = [&,this]()
         {
-            skip();
+            if (send_message_to_leader(leader_ip, leader_port, start_msg))
+                skip();
         };
 
         g.start_callback = &start_callback;

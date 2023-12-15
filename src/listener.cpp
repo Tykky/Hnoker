@@ -115,10 +115,6 @@ namespace hnoker
         return false;
     }
 
-    static void listener_send_control(ControlMusic& cm, network& net)
-    {
-    }
-
     void start_listener(const std::string_view connector_ip, const uint16_t connector_port)
     {
         INFO("Starting listener");

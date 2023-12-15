@@ -102,7 +102,7 @@ namespace hnoker
         });
     }
 
-    void write_message_to_buffer(std::span<char>& buffer, const Message& m)
+    void write_message_to_buffer(std::span<char> buffer, const Message& m)
     {
         INFO("Writing message from buffer, type as integer is {}", +(static_cast<char>(m.type)));
         buffer[0] = static_cast<char>(m.type);
