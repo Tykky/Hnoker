@@ -142,7 +142,7 @@ struct Client {
 
     bool operator==(const Client& rhs)
     {
-        return ip == rhs.ip && port == rhs.port;
+        return ip == rhs.ip;
     }
 };
 

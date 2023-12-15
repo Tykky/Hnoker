@@ -13,7 +13,72 @@
 
 namespace hnoker
 {
-    static bool cm_handler(ControlMusic& cm, player::MusicPlayer& player)
+    static bool is_coordinator(ClientList& cl)
+    {
+        std::uint16_t my_id = cl.bully_id;
+        Client coordinator;
+        coordinator.bully_id = 0;
+        for (auto& c : cl.clients)
+        {
+            if (c.bully_id > coordinator.bully_id)
+                coordinator = c;
+        }
+        return coordinator.bully_id == my_id;
+    }
+
+    static void relay_cm_to_all_clients(ControlMusic& cm, ClientList& cl)
+    {
+        network net;
+        Message msg { MessageType::CONTROL_MUSIC };
+
+        std::array<char, 1024> rbuf;
+        std::array<char, 1024> wbuf;
+
+        std::function w = [&](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        {
+            write_message_to_buffer(write_buf, msg);
+            return false;
+        };
+
+        std::function th = []()
+        {
+            INFO("Failed to relay CONTROL_MUSIC to listener");
+        };
+
+        for (auto& c : cl.clients)
+        { 
+            if (!is_coordinator(cl))
+            {
+                net.async_connect_server(c.ip, LISTENER_SERVER_PORT, rbuf, wbuf, w, th);
+                net.run();
+            }
+        }
+    }
+
+    static void send_player_status(std::string_view ip, std::span<char> rbuf, std::span<char> wbuf, player::MusicPlayer& player)
+    {
+        INFO("Listener recieved coordinator relay");
+        network net;
+        
+        std::function write = [&](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        {
+            Message msg{ MessageType::SEND_STATUS };
+            msg.ss = player.get_status();
+            write_message_to_buffer(wbuf, msg);
+            return false;
+        };
+
+        hnoker::timeout_handler th = []()
+        {
+            INFO("Listener tried to respond to coordinator relay but timed out!");
+        };
+
+        net.async_connect_server(ip, LISTENER_SERVER_PORT, rbuf, wbuf, write, th);
+        net.run();
+
+    }
+
+    static bool cm_handler(ControlMusic& cm, player::MusicPlayer& player, ClientList& cl, std::string_view ip, std::span<char> rbuf, std::span<char> wbuf)
     {
         INFO("Listener recieved CONTROL_MUSIC");
         SendStatus status = player.get_status();
@@ -31,6 +96,12 @@ namespace hnoker
                 player.skip();
                 break;
         }
+
+        if (is_coordinator(cl))
+            relay_cm_to_all_clients(cm, cl);
+        else
+            send_player_status(ip, rbuf, wbuf, player);
+
         return false;
     }
 
@@ -109,7 +180,7 @@ namespace hnoker
         switch (msg.type)
         {
             case MessageType::CONTROL_MUSIC:
-                return cm_handler(msg.cm, player);
+                return cm_handler(msg.cm, player, listener_state, ip, rbuf, wbuf);
             case MessageType::CHANGE_SONG:
                 return cs_handler(msg.cs, player);
             case MessageType::DISCONNECT:

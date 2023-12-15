@@ -51,7 +51,7 @@ namespace player {
 
         if (leader_ip == "")
         {
-            INFO("Message was not sent to leader due unknown leader ip or port number!");
+            INFO("Message was not sent to leader due unknown leader ip!");
             return false;
         }
 
@@ -83,6 +83,8 @@ namespace player {
     static std::string find_coordinator(ClientList& cl)
     {
         Client coordinator;
+        coordinator.ip = "";
+        coordinator.bully_id = 0;
         for (auto& c : cl.clients)
             if (c.bully_id > coordinator.bully_id)
                 coordinator = c;
