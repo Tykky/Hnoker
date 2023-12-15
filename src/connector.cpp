@@ -21,7 +21,7 @@ class RNG {
 private:
     std::random_device dev_{};
     std::mt19937 gen_{dev_()};
-    std::uniform_int_distribution<std::uint16_t> dist_{0, std::numeric_limits<std::uint16_t>::max()};
+    std::uniform_int_distribution<std::uint16_t> dist_{1, std::numeric_limits<std::uint16_t>::max()};
 public:
     std::uint16_t get()
     {
@@ -104,7 +104,7 @@ void refresh_timeout(Client to_refresh)
     }
 }
 
-void send_list_to_all()
+void send_list_to_all(std::uint16_t& leader_id)
 {
     INFO("Starting list send")
     std::array<char, 1024> write_buffer;
@@ -123,6 +123,10 @@ void send_list_to_all()
         }
     }
 
+    if (client_list.size() > 0)
+        leader_id = client_list[0].bully_id;
+
+    cu_out.cl.bully_id = leader_id;
     cu_out.cl.clients = client_list;
 
     INFO("Writing client list to buffer")
@@ -142,18 +146,18 @@ void send_list_to_all()
     bombardment.run();
 }
 
-
-
 void start_connector()
 {
     INFO("Starting connector")
     std::array<char, 1024> read_buffer;
     std::array<char, 1024> write_buffer;
 
+    std::uint16_t leader_id = 0;
+
     RNG rng{};
     clients = std::vector<ClientInfo>();
 
-    hnoker::read_write_op_t handle_message = [&rng](std::span<char> read_buffer, std::span<char> write_buffer, const std::string& ip, const std::uint16_t& port) -> bool
+    hnoker::read_write_op_t handle_message = [&leader_id, &rng](std::span<char> read_buffer, std::span<char> write_buffer, const std::string& ip, const std::uint16_t& port) -> bool
     {
         INFO("Connector received message from {}:{}", ip, port)
         MessageType message_type = static_cast<MessageType>(read_buffer[0]);
@@ -178,7 +182,7 @@ void start_connector()
             if (added)
             {
                 INFO("New client {} was added to list, sending new list to all", ip)
-                send_list_to_all();
+                send_list_to_all(leader_id);
             }
         }
         else if (message_type == MessageType::DISCONNECT)
@@ -188,7 +192,7 @@ void start_connector()
                 std::lock_guard<std::mutex> clients_lock(clients_mutex);
                 remove_client(client);
             }
-            send_list_to_all();
+            send_list_to_all(leader_id);
         }
         else if (message_type == MessageType::SEND_STATUS)
         {
@@ -221,7 +225,7 @@ void start_connector()
         if (number_erased > 0)
         {
             INFO("Some timed out clients were removed, sending new list to remaining clients");
-            send_list_to_all();
+            send_list_to_all(leader_id);
         }
     }
 }
