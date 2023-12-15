@@ -65,7 +65,7 @@ namespace hnoker
         ctx->boost_ctx.run();
     }
 
-    static void handle_network_eptr(std::exception_ptr eptr)
+    static void handle_network_eptr(std::exception_ptr eptr, const timeout_handler& eh)
     {
         try
         {
@@ -78,19 +78,27 @@ namespace hnoker
             INFO("NETWORK ERROR ({}:{}): {}", __FILE__, __LINE__, info);
             throw std::runtime_error("Network error");
         }
+        catch (const boost::system::system_error& e)
+        {
+            // Connection timed out
+            if (e.code() == boost::asio::error::operation_aborted)
+            {
+                eh();
+            }
+        }
     }
 
-    void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,  const read_write_op_t& read_write_op)
+    void async_create_server_impl(network_context* ctx, uint16_t port, std::span<char> read_buf, std::span<char> write_buf,  const read_write_op_t& read_write_op, const timeout_handler& eh)
     {
-        co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, write_buf, read_write_op), [](std::exception_ptr ep) {
-            handle_network_eptr(ep);
+        co_spawn(ctx->boost_ctx, accept_tcp_connections(port, read_buf, write_buf, read_write_op), [eh](std::exception_ptr ep) {
+            handle_network_eptr(ep, eh);
         });
     }
 
-    void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op)
+    void async_connect_server_impl(network_context* ctx, std::string_view address, uint16_t port, std::span<char> read_buf, std::span<char> write_buf, const read_write_op_t& read_write_op, const timeout_handler& eh)
     {
-        co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, write_buf, read_write_op), [](std::exception_ptr ep) {
-            handle_network_eptr(ep);
+        co_spawn(ctx->boost_ctx, connect_to_tcp_server(address, port, read_buf, write_buf, read_write_op), [eh](std::exception_ptr ep) {
+            handle_network_eptr(ep, eh);
         });
     }
 
@@ -105,15 +113,11 @@ namespace hnoker
         boost::archive::text_oarchive oa{output_stream};
         try
         {
-            // t�� ei toimi jos messagessa on C array esim ClientList, tolle
-            // arraylle oli kai joku oma archive juttu boost::serialization::make_array
-            // https://www.boost.org/doc/libs/1_78_0/libs/serialization/doc/wrappers.html#:~:text=boost%3A%3Aserialization%3A%3Amake_array(T*%20t%2C%20std%3A%3Asize_t%20size)%3B
             oa << m;
         }
         catch (std::exception& e)
         {
             INFO("Archiving busted, pls fix");
-            // pit�� viel fixaa n�� exceptionit 
             throw std::runtime_error("archiving bad and busted");
         }
     }
@@ -165,7 +169,6 @@ namespace hnoker
             }
             else
             {
-                // TODO: fix exceptions
                 throw std::runtime_error("sever busted XD");
             }
                
@@ -192,7 +195,6 @@ namespace hnoker
             }
             else
             {
-                // TODO: fix exceptions
                 throw std::runtime_error("sever busted XD");
             }
         }
@@ -225,7 +227,6 @@ namespace hnoker
         auto timeout_timer = [](deadline_timer& timer, tcp::socket& socket, const std::string_view host, const uint16_t port) -> awaitable<void>
         {
             co_await timer.async_wait(use_awaitable);
-            socket.cancel();
             socket.close();
             INFO("Tcp client timed out while trying to connect to {}:{}", host, port);
         };

@@ -147,12 +147,17 @@ namespace hnoker
             return true;
         };
 
-        listener_server_network.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server);
-        listener_server_network.async_connect_server(connector_ip, connector_port, client_rb, client_wb, send_connect);
+        const timeout_handler th = []()
+        {
+        };
+
+        listener_server_network.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server, [](){});
+        listener_server_network.async_connect_server(connector_ip, connector_port, client_rb, client_wb, send_connect, th);
 
         std::jthread th{ [&]() {
             listener_server_network.run();
         }};
+
         th.detach();
            
         player.start_player(listener_state_cl);

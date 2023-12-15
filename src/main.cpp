@@ -60,7 +60,7 @@ void test_networking_archives_singlemessage()
     };
 
     // Tää omaan threadiin, mul meni joku puol tuntii tajuta et toi run on blokkaava calli xd
-    std::jthread xd([&]() mutable { network.async_create_server(LISTENER_SERVER_PORT, server_rbuf, server_wbuf, read_write_op); network.run(); });
+    std::jthread xd([&]() mutable { network.async_create_server(LISTENER_SERVER_PORT, server_rbuf, server_wbuf, read_write_op, hnoker::default_timeout_handler); network.run(); });
 
     // Uuus viesti queueen joka kerta
     while (true)
@@ -69,7 +69,7 @@ void test_networking_archives_singlemessage()
         INFO("Sending message");
 
         hnoker::network client_network;
-        client_network.async_connect_server("127.0.0.1", LISTENER_SERVER_PORT, client_rbuf, client_wbuf, write_archive);
+        client_network.async_connect_server("127.0.0.1", LISTENER_SERVER_PORT, client_rbuf, client_wbuf, write_archive, hnoker::default_timeout_handler);
         //network.async_connect_server("127.0.0.1", port, client_rbuf, client_wbuf, write_archive);
         client_network.run();
     }
@@ -105,7 +105,7 @@ void test_connector()
 
     hnoker::network server_network;
 
-    std::jthread xd2blyat([&]() { server_network.async_create_server(LISTENER_SERVER_PORT, client_rbuf, client_wbuf, server_callback); server_network.run(); });
+    std::jthread xd2blyat([&]() { server_network.async_create_server(LISTENER_SERVER_PORT, client_rbuf, client_wbuf, server_callback, hnoker::default_timeout_handler); server_network.run(); });
     xd2blyat.detach();
 
     while (true)
@@ -113,7 +113,7 @@ void test_connector()
         std::this_thread::sleep_for(std::chrono::seconds(3));
         INFO("Sending message");
         hnoker::network client_network;
-        client_network.async_connect_server("127.0.0.1", CONNECTOR_SERVER_PORT, client_rbuf, client_wbuf, client_callback);
+        client_network.async_connect_server("127.0.0.1", CONNECTOR_SERVER_PORT, client_rbuf, client_wbuf, client_callback, hnoker::default_timeout_handler);
         client_network.run();
         INFO("Message sent")
     }

@@ -69,6 +69,9 @@ std::jthread create_knocker(const std::string ip, const std::uint16_t port)
 
             hnoker::network knocker_network;
 
+            const hnoker::timeout_handler th = []() {
+            };
+
             while (true)
             {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -134,7 +137,7 @@ void send_list_to_all()
     for (const Client& c : client_list)
     {
         INFO("Client: {}", c.ip)
-        bombardment.async_connect_server(c.ip, LISTENER_SERVER_PORT, std::span<char>(), write_buffer, op);
+        bombardment.async_connect_server(c.ip, LISTENER_SERVER_PORT, std::span<char>(), write_buffer, op, hnoker::default_timeout_handler);
     }
     bombardment.run();
 }
@@ -196,7 +199,7 @@ void start_connector()
     };
 
     hnoker::network network;
-    std::jthread xd{[&]() { network.async_create_server(CONNECTOR_SERVER_PORT, read_buffer, write_buffer, handle_message); INFO("Connector receiving messages"); network.run(); }};
+    std::jthread xd{[&]() { network.async_create_server(CONNECTOR_SERVER_PORT, read_buffer, write_buffer, handle_message, hnoker::default_timeout_handler); INFO("Connector receiving messages"); network.run(); }};
     xd.detach();
 
 
