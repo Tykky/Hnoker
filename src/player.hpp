@@ -60,5 +60,6 @@ namespace player {
         void set_elapsed(int new_elapsed);
         void toggle_pause();
         const SendStatus get_status();
+        void set_status(const SendStatus& status);
     };
 }

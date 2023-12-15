@@ -13,7 +13,7 @@
 
 namespace hnoker
 {
-    static bool is_coordinator(ClientList& cl)
+    static bool is_this_coordinator(ClientList& cl)
     {
         std::uint16_t my_id = cl.bully_id;
         Client coordinator;
@@ -25,7 +25,7 @@ namespace hnoker
         }
         return coordinator.bully_id == my_id;
     }
-
+    
     static void relay_cm_to_all_clients(ControlMusic& cm, ClientList& cl)
     {
         network net;
@@ -47,7 +47,7 @@ namespace hnoker
 
         for (auto& c : cl.clients)
         { 
-            if (!is_coordinator(cl))
+            if (!is_this_coordinator(cl))
             {
                 net.async_connect_server(c.ip, LISTENER_SERVER_PORT, rbuf, wbuf, w, th);
                 net.run();
@@ -97,7 +97,7 @@ namespace hnoker
                 break;
         }
 
-        if (is_coordinator(cl))
+        if (is_this_coordinator(cl))
             relay_cm_to_all_clients(cm, cl);
         else
             send_player_status(ip, rbuf, wbuf, player);
@@ -149,9 +149,28 @@ namespace hnoker
         return false;
     }
 
-    static bool ss_handler(SendStatus& ss)
+    static bool ss_handler(SendStatus& ss, player::MusicPlayer& player, ClientList& listener_state, std::string_view ip, std::span<char> rbuf, std::span<char> wbuf)
     {
-        INFO("Listener recieved SEND_STATUS");
+        INFO("Listener recieved SEND_STATUS, checking for desync");
+        const SendStatus& ps = player.get_status();
+
+        if (is_this_coordinator(listener_state))
+        {
+            if (ps != ss)
+            {
+                INFO("Coordinator detected desync! sending state");
+                for (auto& c : listener_state.clients)
+                {
+                    if (listener_state.bully_id != c.bully_id)
+                        send_player_status(c.ip, rbuf, wbuf, player);
+                }
+            }
+        }
+        else
+        {
+            player.set_status(ps);
+        }
+
         return false;
     }
 
@@ -175,7 +194,7 @@ namespace hnoker
         return false;
     }
 
-    static bool message_handler(Message& msg, player::MusicPlayer& player,std::span<char> rbuf, std::span<char> wbuf, ClientList& listener_state, const std::string_view ip, std::uint16_t port)
+    static bool message_handler(Message& msg, player::MusicPlayer& player, std::span<char> rbuf, std::span<char> wbuf, ClientList& listener_state, const std::string_view ip, std::uint16_t port)
     {
         switch (msg.type)
         {
@@ -190,7 +209,7 @@ namespace hnoker
             case MessageType::QUERY_STATUS:
                 return qs_handler(msg.qs, player, rbuf, wbuf, ip, port);
             case MessageType::SEND_STATUS:
-                return ss_handler(msg.ss);
+                return ss_handler(msg.ss, player, listener_state, ip, rbuf, wbuf);
             case MessageType::BULLY:
                 return bl_handler(msg.bl);
             case MessageType::CONNECTOR_LIST:

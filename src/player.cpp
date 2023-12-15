@@ -243,4 +243,12 @@ namespace player {
 
         return status;
     }
+
+    void MusicPlayer::set_status(const SendStatus& status)
+    {
+        song_id = status.current_song_id;
+        elapsed = status.elapsed_time;
+        paused = status.paused;
+        song_queue = status.queue;
+    }
 }

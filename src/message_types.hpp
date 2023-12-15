@@ -108,6 +108,15 @@ struct SendStatus {
         ar & paused;
         ar & queue;
     }
+
+    bool operator==(const SendStatus& rhs)
+    {
+        return current_song_id == rhs.current_song_id &&
+               elapsed_time == rhs.elapsed_time &&
+               paused == rhs.paused &&
+               queue == rhs.queue;
+    }
+
 };
 
 enum struct BullyType : std::uint8_t {
