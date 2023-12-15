@@ -104,7 +104,7 @@ void refresh_timeout(Client to_refresh)
     }
 }
 
-void send_list_to_all(std::uint16_t& leader_id)
+void send_list_to_all()
 {
     INFO("Starting list send")
     std::array<char, 1024> write_buffer;
@@ -122,9 +122,6 @@ void send_list_to_all(std::uint16_t& leader_id)
             client_list.emplace_back(c.client);
         }
     }
-
-    if (client_list.size() > 0)
-        leader_id = client_list[0].bully_id;
 
     cu_out.cl.clients = client_list;
 
@@ -151,12 +148,10 @@ void start_connector()
     std::array<char, 1024> read_buffer;
     std::array<char, 1024> write_buffer;
 
-    std::uint16_t leader_id = 0;
-
     RNG rng{};
     clients = std::vector<ClientInfo>();
 
-    hnoker::read_write_op_t handle_message = [&leader_id, &rng](std::span<char> read_buffer, std::span<char> write_buffer, const std::string& ip, const std::uint16_t& port) -> bool
+    hnoker::read_write_op_t handle_message = [&rng](std::span<char> read_buffer, std::span<char> write_buffer, const std::string& ip, const std::uint16_t& port) -> bool
     {
         INFO("Connector received message from {}:{}", ip, port)
         MessageType message_type = static_cast<MessageType>(read_buffer[0]);
@@ -181,7 +176,7 @@ void start_connector()
             if (added)
             {
                 INFO("New client {} was added to list, sending new list to all", ip)
-                send_list_to_all(leader_id);
+                send_list_to_all();
             }
         }
         else if (message_type == MessageType::DISCONNECT)
@@ -191,7 +186,7 @@ void start_connector()
                 std::lock_guard<std::mutex> clients_lock(clients_mutex);
                 remove_client(client);
             }
-            send_list_to_all(leader_id);
+            send_list_to_all();
         }
         else if (message_type == MessageType::SEND_STATUS)
         {
@@ -224,7 +219,7 @@ void start_connector()
         if (number_erased > 0)
         {
             INFO("Some timed out clients were removed, sending new list to remaining clients");
-            send_list_to_all(leader_id);
+            send_list_to_all();
         }
     }
 }
