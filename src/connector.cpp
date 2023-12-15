@@ -110,7 +110,7 @@ void send_list_to_all(std::uint16_t& leader_id)
     std::array<char, 1024> write_buffer;
     std::span<char> write_span{write_buffer.begin(), write_buffer.end()};
 
-    Message cu_out{ MessageType::CONNECTOR_LIST };
+    Message cu_out{ MessageType::CONNECTOR_LIST_UPDATE };
     std::vector<Client> client_list;
     INFO("Current clients: {}", clients.size());
 
@@ -126,7 +126,6 @@ void send_list_to_all(std::uint16_t& leader_id)
     if (client_list.size() > 0)
         leader_id = client_list[0].bully_id;
 
-    cu_out.cl.bully_id = leader_id;
     cu_out.cl.clients = client_list;
 
     INFO("Writing client list to buffer")
