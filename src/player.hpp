@@ -18,8 +18,6 @@
 #include <unordered_map>
 #include <utility>
 
-#include "Gui.hpp"
-
 namespace player {
     using std::chrono::time_point;
     using std::chrono::steady_clock;
