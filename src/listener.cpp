@@ -147,8 +147,9 @@ namespace hnoker
             return true;
         };
 
-        const timeout_handler thandler = []()
+        const timeout_handler thandler = [&]()
         {
+            INFO("Failed to send CONNECT to connect/coordinator node at {}:{}! Connection timed out.", connector_ip, connector_port);
         };
 
         listener_server_network.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server, [](){});
