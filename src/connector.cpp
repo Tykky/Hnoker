@@ -175,6 +175,8 @@ void start_connector()
                 }
             }
 
+            added = true;
+
             if (added)
             {
                 INFO("New client {} was added to list, sending new list to all", ip)
