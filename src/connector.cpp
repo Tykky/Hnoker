@@ -123,7 +123,7 @@ void send_list_to_all()
         }
     }
 
-    cu_out.cl.clients = client_list;
+    cu_out.cu.clients = client_list;
 
     INFO("Writing client list to buffer")
     hnoker::write_message_to_buffer(write_span, cu_out);
@@ -159,6 +159,8 @@ void start_connector()
         std::uint16_t bully_id = rng.get();
         Client client{ip, port, rng.get()};
 
+        hnoker::network net;
+
         if (message_type == MessageType::CONNECT)
         {
             INFO("Message type was CONNECT")
@@ -176,6 +178,23 @@ void start_connector()
             if (added)
             {
                 INFO("New client {} was added to list, sending new list to all", ip)
+
+                Message cl = { MessageType::CONNECTOR_LIST };
+                cl.cl.bully_id = bully_id;
+
+                std::function msg = [&cl](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+                {
+                    return false;
+                };
+
+                hnoker::timeout_handler th = []()
+                {
+                    INFO("Timed out while sending CONNECTOR_LIST");
+                };
+
+                net.async_connect_server(ip, LISTENER_SERVER_PORT, read_buffer, write_buffer, msg, th);
+                net.run();
+
                 send_list_to_all();
             }
         }

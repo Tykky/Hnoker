@@ -92,8 +92,8 @@ namespace hnoker
 
     static bool cl_handler(ClientList& cl, ClientList& listener_state)
     {
-        INFO("Listener recieved CONNECTOR_LIST");
-        listener_state = cl;
+        INFO("Listener recieved CONNECTOR_LIST, bully_id : {}", cl.bully_id);
+        listener_state.bully_id = cl.bully_id;
         return false;
     }
 
@@ -160,7 +160,7 @@ namespace hnoker
 
         const timeout_handler thandler = [&]()
         {
-            INFO("Failed to send CONNECT to connect/coordinator node at {}:{}! Connection timed out.", connector_ip, connector_port);
+            INFO("Failed to send CONNECT to connect node at {}:{}! Connection timed out.", connector_ip, connector_port);
         };
 
         listener_server_network.async_create_server(LISTENER_SERVER_PORT, server_rb, server_wb, server, [](){});
