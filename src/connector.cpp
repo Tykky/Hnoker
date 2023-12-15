@@ -184,6 +184,7 @@ void start_connector()
 
                 std::function msg = [&cl](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
                 {
+                    hnoker::write_message_to_buffer(write_buf, cl);
                     return false;
                 };
 
