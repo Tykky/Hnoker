@@ -85,7 +85,7 @@ namespace player {
         std::string song_name = "";
 
         std::string leader_ip = "127.0.0.1";
-        std::uint16_t leader_port = 5555;
+        std::uint16_t leader_port = CONNECTOR_SERVER_PORT;
 
         Message stop_msg = { MessageType::CONTROL_MUSIC };
         Message start_msg = { MessageType::CONTROL_MUSIC };

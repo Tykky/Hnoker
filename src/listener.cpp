@@ -54,12 +54,27 @@ namespace hnoker
         return false;
     }
 
-    static bool qs_handler(QueryStatus& qs, player::MusicPlayer& player, std::span<char> wbuf)
+    static bool qs_handler(QueryStatus& qs, player::MusicPlayer& player,std::span<char> rbuf, std::span<char> wbuf, const std::string_view ip, const std::uint16_t port)
     {
         INFO("Listener recieved QUERY_STATUS");
-        Message msg{ MessageType::SEND_STATUS };
-        msg.ss = player.get_status();
-        write_message_to_buffer(wbuf, msg);
+        network net;
+        
+        std::function write = [&](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        {
+            Message msg{ MessageType::SEND_STATUS };
+            msg.ss = player.get_status();
+            write_message_to_buffer(wbuf, msg);
+            return false;
+        };
+
+        hnoker::timeout_handler th = []()
+        {
+            INFO("Listener tried to respond to QUERY_STATUS but timed out!");
+        };
+
+        net.async_connect_server(ip, port, rbuf, wbuf, write, th);
+        net.run();
+
         return false;
     }
 
@@ -89,7 +104,7 @@ namespace hnoker
         return false;
     }
 
-    static bool message_handler(Message& msg, player::MusicPlayer& player, std::span<char> wbuf, ClientList& listener_state)
+    static bool message_handler(Message& msg, player::MusicPlayer& player,std::span<char> rbuf, std::span<char> wbuf, ClientList& listener_state, const std::string_view ip, std::uint16_t port)
     {
         switch (msg.type)
         {
@@ -102,7 +117,7 @@ namespace hnoker
             case MessageType::CONNECT:
                 return cn_handler(msg.cn);
             case MessageType::QUERY_STATUS:
-                return qs_handler(msg.qs, player, wbuf);
+                return qs_handler(msg.qs, player, rbuf, wbuf, ip, port);
             case MessageType::SEND_STATUS:
                 return ss_handler(msg.ss);
             case MessageType::BULLY:
@@ -131,10 +146,10 @@ namespace hnoker
 
         Message connect_msg = { MessageType::CONNECT };
 
-        static std::function server = [&player, &listener_state_cl](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
+        static std::function server = [connector_ip, connector_port, &player, &listener_state_cl](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool
         {
             Message msg = read_message_from_buffer(read_buf);
-            return message_handler(msg, player, write_buf, listener_state_cl);
+            return message_handler(msg, player,read_buf, write_buf, listener_state_cl, connector_ip, connector_port);
         };
 
         static std::function send_connect = [&connect_msg](std::span<char> read_buf, std::span<char> write_buf, const std::string& ip, std::uint16_t port) -> bool

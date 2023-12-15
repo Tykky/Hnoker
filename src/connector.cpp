@@ -110,7 +110,7 @@ void send_list_to_all()
     std::array<char, 1024> write_buffer;
     std::span<char> write_span{write_buffer.begin(), write_buffer.end()};
 
-    Message cu_out{ MessageType::CONNECTOR_LIST_UPDATE };
+    Message cu_out{ MessageType::CONNECTOR_LIST };
     std::vector<Client> client_list;
     INFO("Current clients: {}", clients.size());
 
@@ -123,7 +123,7 @@ void send_list_to_all()
         }
     }
 
-    cu_out.cu.clients = client_list;
+    cu_out.cl.clients = client_list;
 
     INFO("Writing client list to buffer")
     hnoker::write_message_to_buffer(write_span, cu_out);
